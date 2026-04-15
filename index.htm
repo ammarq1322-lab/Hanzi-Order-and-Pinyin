@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanzi Grid - Flexible Xiaoyi Default</title>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-section, .voice-selector-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .input-section label, .voice-selector-section label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .input-section textarea {
+            width: 98%; 
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1.1em;
+            resize: vertical;
+        }
+        .input-section button {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.2s;
+        }
+        .input-section button:hover {
+            background-color: #0056b3;
+        }
+        #voice-select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            background-color: white;
+        }
+
+        #character-grid-output {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+            gap: 15px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 900px; 
+        }
+
+        .hanzi-item-container { 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 4px; 
+            background-color: #f9f9f9;
+            padding: 8px 8px 0 8px; 
+            min-height: 140px; 
+            box-sizing: border-box;
+            overflow: hidden; 
+        }
+
+        .hanzi-box-item { 
+            width: 70px;  
+            height: 70px;
+            position: relative; 
+            cursor: pointer;
+            border: 1px solid #eee; 
+            margin-bottom: 10px; 
+        }
+        .hanzi-box-item:hover {
+            border-color: #007bff;
+        }
+        .hanzi-box-item > svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .char-info-line { 
+            display: flex;
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            width: calc(100% + 16px); 
+            margin-left: -8px; 
+            margin-right: -8px; 
+            margin-top: auto; 
+            padding: 8px 0; 
+            background-color: #4a90e2; 
+            border-radius: 0 0 4px 4px; 
+        }
+
+        .static-hanzi-text {
+            font-size: 2em;  
+            color: #ffffff; 
+            line-height: 1; 
+        }
+
+        .audio-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5em; 
+            padding: 0; 
+            color: #ffffff; 
+            line-height: 1; 
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "emoji", sans-serif;
+        }
+        .audio-button:hover {
+            color: #d0e0ff; 
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Hanzi Grid - Flexible Xiaoyi Default</h1>
+    <p>Paste Chinese text. Voice defaults to a Xiaoyi variant if available. Click character to animate, or speaker icon for audio.</p>
+
+    <div class="input-section">
+        <label for="chinese-text-input">Enter Chinese Text:</label>
+        <textarea id="chinese-text-input" placeholder="例如：你好，世界！ 我爱编程。"></textarea>
+        <button id="process-text-button">Process Text & Show Characters</button>
+    </div>
+
+    <div class="voice-selector-section">
+        <label for="voice-select">Select TTS Voice (Overrides Default):</label>
+        <select id="voice-select">
+            <option value="">Default (Try Xiaoyi variant)</option> 
+            {/* Placeholder, will be repopulated */}
+        </select>
+    </div>
+
+    <div id="character-grid-output">
+        {/* Hanzi items will be created here */}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textInput = document.getElementById('chinese-text-input');
+            const processButton = document.getElementById('process-text-button');
+            const gridOutput = document.getElementById('character-grid-output');
+            const voiceSelectDropdown = document.getElementById('voice-select');
+            
+            const hanziRegex = /\p{Script=Han}/u;
+            const punctuationAndWhitespaceRegex = /[\s\u2000-\u206F\u3000-\u303F\uFF00-\uFFEF,\.:;'"()\[\]{}?!<>+\-=\/\*&^%$#@~`|\\]/;
+
+            const synth = window.speechSynthesis;
+            let availableVoices = [];
+
+            // More flexible target: just check for "Xiaoyi" and "zh-CN"
+            const TARGET_DEFAULT_VOICE_KEYWORD = "xiaoyi"; 
+            let voicesLoadedInitially = false;
+
+            function populateVoiceListDropdown(dropdownElement) {
+                if (!dropdownElement) return;
+                dropdownElement.innerHTML = ''; 
+
+                if (availableVoices.length === 0) {
+                    dropdownElement.innerHTML = '<option value="">Loading voices...</option>';
+                    return; 
+                }
+
+                console.log("Populating dropdown. All Available Voices:", availableVoices);
+                let preferredDefaultOptionValue = null; // To store the value of the preferred default option
+                let firstChineseVoiceValueForDropdown = null;
+                
+                const fragment = document.createDocumentFragment();
+
+                const defaultLogicOption = document.createElement('option');
+                defaultLogicOption.textContent = `Default (Try: ${TARGET_DEFAULT_VOICE_KEYWORD} variant)`;
+                defaultLogicOption.value = ""; 
+                fragment.appendChild(defaultLogicOption);
+
+                const chineseVoiceOptions = [];
+                availableVoices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    option.value = index.toString(); 
+                    
+                    if (voice.lang.startsWith('zh-CN') || voice.lang.startsWith('zh')) {
+                        fragment.appendChild(option); // Add Chinese voices after "Default"
+                        chineseVoiceOptions.push(option);
+                        // Check for preferred default (Xiaoyi)
+                        if (voice.name.toLowerCase().includes(TARGET_DEFAULT_VOICE_KEYWORD)) {
+                            if (preferredDefaultOptionValue === null) { // Prioritize first Xiaoyi found
+                                preferredDefaultOptionValue = option.value;
+                            }
+                        }
+                        if (firstChineseVoiceValueForDropdown === null) {
+                            firstChineseVoiceValueForDropdown = option.value;
+                        }
+                    }
+                });
+                
+                if (chineseVoiceOptions.length === 0) {
+                     const noChineseOption = document.createElement('option');
+                     noChineseOption.textContent = "No Chinese voices found";
+                     noChineseOption.disabled = true;
+                     fragment.insertBefore(noChineseOption, defaultLogicOption.nextSibling); // Insert after Default
+                }
+                
+                // Add other non-Chinese voices if any, after a separator
+                const nonChineseVoices = availableVoices.filter(v => !(v.lang.startsWith('zh-CN') || v.lang.startsWith('zh')));
+                if (nonChineseVoices.length > 0) {
+                    const separator = document.createElement('option');
+                    separator.textContent = "--- Other Available Voices ---";
+                    separator.disabled = true;
+                    fragment.appendChild(separator);
+                    nonChineseVoices.forEach((voice) => { // Iterate original availableVoices to get correct index
+                        const originalIndex = availableVoices.indexOf(voice);
+                        const option = document.createElement('option');
+                        option.textContent = `${voice.name} (${voice.lang})`;
+                        option.value = originalIndex.toString();
+                        fragment.appendChild(option);
+                    });
+                }
+                
+                dropdownElement.appendChild(fragment);
+
+                // Set the default selection in the dropdown
+                if (preferredDefaultOptionValue !== null) {
+                    dropdownElement.value = preferredDefaultOptionValue;
+                    console.log(`Dropdown pre-selected: A voice containing "${TARGET_DEFAULT_VOICE_KEYWORD}"`);
+                } else if (firstChineseVoiceValueForDropdown !== null) {
+                    dropdownElement.value = firstChineseVoiceValueForDropdown;
+                    console.log(`No "${TARGET_DEFAULT_VOICE_KEYWORD}" voice. Dropdown pre-selected first Chinese voice.`);
+                } else {
+                    dropdownElement.value = ""; // "Default (Try...)"
+                    console.log(`No Chinese voices. "Default (Try...)" option selected.`);
+                }
+            }
+            
+            function loadAndPopulateVoices() {
+                if (typeof synth.getVoices !== 'function') { 
+                    populateVoiceListDropdown(voiceSelectDropdown); return;
+                }
+                availableVoices = synth.getVoices(); 
+                if (availableVoices.length > 0) {
+                    voicesLoadedInitially = true;
+                    populateVoiceListDropdown(voiceSelectDropdown);
+                    if (synth.onvoiceschanged === loadAndPopulateVoices) synth.onvoiceschanged = null; 
+                } else if (!voicesLoadedInitially && (synth.onvoiceschanged === null || synth.onvoiceschanged === undefined) ) { 
+                    synth.onvoiceschanged = () => {
+                        voicesLoadedInitially = true; 
+                        loadAndPopulateVoices(); 
+                        synth.onvoiceschanged = null; 
+                    };
+                }
+            }
+
+            if (synth && synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadAndPopulateVoices; 
+            loadAndPopulateVoices(); 
+
+
+            function speakCharacter(char) {
+                if (!char) return;
+                if (synth.speaking) { synth.cancel(); }
+                
+                setTimeout(() => {
+                    const utterThis = new SpeechSynthesisUtterance(char);
+                    utterThis.lang = 'zh-CN'; 
+                    utterThis.rate = 0.85; 
+                    utterThis.pitch = 1.0;  
+
+                    const selectedDropdownValue = voiceSelectDropdown.value;
+                    let targetVoice = null;
+
+                    // 1. If user made a specific selection from dropdown (value is not "")
+                    if (selectedDropdownValue !== "" && selectedDropdownValue !== null) {
+                        const idx = parseInt(selectedDropdownValue, 10);
+                        if (idx >= 0 && idx < availableVoices.length) {
+                            targetVoice = availableVoices[idx];
+                            console.log("Using voice explicitly selected from dropdown:", targetVoice.name);
+                        }
+                    }
+                    
+                    // 2. If dropdown is on "Default (Try...)" (value is "") or selection was invalid
+                    if (!targetVoice) {
+                        console.log("Applying default voice logic: Prioritizing a 'Xiaoyi' variant...");
+                        // Try to find any voice containing "xiaoyi" (case-insensitive) and is zh-CN
+                        targetVoice = availableVoices.find(voice => 
+                            voice.lang.startsWith('zh-CN') &&
+                            voice.name.toLowerCase().includes(TARGET_DEFAULT_VOICE_KEYWORD)
+                        );
+
+                        if (!targetVoice) { 
+                            console.log(`No "Xiaoyi" variant found. Trying other preferred parts.`);
+                            const preferredVoiceNameParts = ["Google 普通话", "Microsoft Kangkang", "Microsoft Huihui", "Microsoft Yaoyao", "Ting-Ting", "Li-mu", "Mei-Jia"];
+                            for (const namePart of preferredVoiceNameParts) {
+                                targetVoice = availableVoices.find(voice => 
+                                    voice.lang.startsWith('zh-CN') && 
+                                    voice.name.toLowerCase().includes(namePart.toLowerCase())
+                                );
+                                if (targetVoice) break;
+                            }
+                        }
+
+                        if (!targetVoice) { 
+                            console.log("Preferred voices not found. Trying any available zh-CN voice.");
+                            targetVoice = availableVoices.find(voice => voice.lang.startsWith('zh-CN'));
+                        }
+                    }
+                    
+                    if (targetVoice) {
+                        utterThis.voice = targetVoice;
+                        utterThis.lang = targetVoice.lang; 
+                        console.log("FINAL Using voice for TTS:", targetVoice.name, `(Lang: ${targetVoice.lang})`);
+                    } else {
+                        console.warn("No suitable zh-CN voice found. Using browser default for 'zh-CN'.");
+                    }
+                    
+                    utterThis.onerror = function (event) {
+                        console.error('SpeechSynthesisUtterance.onerror for char "' + char + '":', event.error, event);
+                        if (event.error !== 'canceled' && event.error !== 'interrupted') {
+                            alert(`TTS Error for '${char}': ${event.error}`);
+                        }
+                    };
+                    synth.speak(utterThis);
+                }, 50); 
+            }
+
+            // ... (processButton and HanziWriter creation logic remains the same) ...
+            processButton.addEventListener('click', function() { 
+                const text = textInput.value;
+                if (!text.trim()) { alert("Please enter text."); return; }
+                gridOutput.innerHTML = ''; 
+                const allCharsInText = Array.from(text); 
+                const uniqueHanzi = [...new Set(allCharsInText.filter(char => 
+                    hanziRegex.test(char) && !punctuationAndWhitespaceRegex.test(char)
+                ))];
+                if (uniqueHanzi.length === 0) { gridOutput.innerHTML = '<p style="text-align:center;color:#777;grid-column:1/-1;">No Hanzi found.</p>'; return; }
+
+                uniqueHanzi.forEach((char, index) => {
+                    const itemContainer = document.createElement('div');
+                    itemContainer.className = 'hanzi-item-container';
+                    const charBoxId = `hanzi-box-${index}`;
+                    const charBox = document.createElement('div');
+                    charBox.id = charBoxId;
+                    charBox.className = 'hanzi-box-item';
+                    charBox.title = `Click to animate/toggle loop for '${char}'`;
+                    
+                    const charInfoLine = document.createElement('div');
+                    charInfoLine.className = 'char-info-line';
+                    const staticHanziEl = document.createElement('span'); 
+                    staticHanziEl.className = 'static-hanzi-text';
+                    staticHanziEl.textContent = char; 
+                    const audioButton = document.createElement('button');
+                    audioButton.className = 'audio-button';
+                    audioButton.innerHTML = '';
+                    audioButton.title = `Play audio for '${char}'`;
+                    
+                    charInfoLine.appendChild(staticHanziEl);
+                    charInfoLine.appendChild(audioButton);
+                    itemContainer.appendChild(charBox);
+                    itemContainer.appendChild(charInfoLine);
+                    gridOutput.appendChild(itemContainer);
+
+                    audioButton.addEventListener('click', (e) => { e.stopPropagation(); speakCharacter(char); });
+
+                    try {
+                        const writer = HanziWriter.create(charBoxId, char, {
+                            width: 70, height: 70, padding: 6, showOutline: true,
+                            strokeAnimationSpeed: 1.1, delayBetweenStrokes: 80,
+                            onLoadCharDataError: (reason) => { charBox.innerHTML = `<span style="color:orange;font-size:12px;">⚠️${char}</span>`; }
+                        });
+
+                        const animationState = { isLooping: false, timeoutId: null };
+
+                        function doAnimateAndLoop() {
+                            if (!animationState.isLooping) return;
+                            writer.animateCharacter({
+                                onComplete: function() {
+                                    if (animationState.isLooping) {
+                                        animationState.timeoutId = setTimeout(doAnimateAndLoop, 1500); 
+                                    }
+                                }
+                            }).catch(err => {
+                                console.error(`Animation error for ${char}:`, err);
+                                animationState.isLooping = false; 
+                            });
+                        }
+
+                        charBox.addEventListener('click', function() {
+                            if (animationState.isLooping) {
+                                animationState.isLooping = false;
+                                if (animationState.timeoutId) { clearTimeout(animationState.timeoutId); animationState.timeoutId = null; }
+                                writer.showCharacter(); writer.showOutline();
+                            } else {
+                                animationState.isLooping = true;
+                                doAnimateAndLoop();
+                            }
+                        });
+                    } catch (e) {
+                        console.error(`HW Create Error "${char}":`, e);
+                        charBox.innerHTML = `<span style="color:red;font-size:12px;">${char}(Err)</span>`;
+                    }
+                });
+            }); 
+        }); 
+    </script>
+</body>
+</html>
