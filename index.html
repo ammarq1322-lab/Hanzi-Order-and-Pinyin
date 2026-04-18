@@ -58,7 +58,7 @@
             padding: 12px 20px; color: white; border: none; border-radius: 4px;
             cursor: pointer; font-size: 1.1em; transition: background-color 0.2s; flex: 1;
         }
-        button:disabled { background-color: #cccccc !important; cursor: not-allowed; }
+        button:disabled { cursor: not-allowed; opacity: 0.8; } #process-text-button:disabled, #start-test-button:disabled { background-color: #cccccc; color: #666; }
         #process-text-button { background-color: #007bff; }
         #process-text-button:hover { background-color: #0056b3; }
         #start-test-button { background-color: #28a745; }
@@ -117,15 +117,25 @@
         .test-char-box { width: 100px; height: 100px; position: relative; }
         .test-char-box > svg { width: 100%; height: 100%; }
         #options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
-        .option-btn {
-            padding: 15px; font-size: 1.1em; border: 2px solid #007bff; background-color: #fff;
-            color: #007bff; border-radius: 6px; cursor: pointer; transition: all 0.2s;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px;
+       .option-btn {
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #007bff;
+            background-color: #fff;
+            color: #007bff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         .option-pinyin { font-weight: bold; font-size: 1.1em; margin-bottom: 4px; }
         .option-meaning { font-size: 0.95em; color: #555; }
-        .option-btn:hover:not(:disabled) { background-color: #007bff; color: white; }
-        .option-btn:hover:not(:disabled) .option-meaning { color: #e0e0e0; }
+        
+        .option-btn:hover { background-color: #007bff; color: white; }
+        .option-btn:hover .option-meaning { color: #e0e0e0; }
         .option-btn:disabled { cursor: not-allowed; opacity: 0.9; }
         #end-test-btn { background-color: #6c757d; margin-top: 15px; }
 
