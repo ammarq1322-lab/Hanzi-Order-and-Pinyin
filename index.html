@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hanzi Grid & Memory Test (AI Enhanced)</title>
-    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <!-- Puter.js integration exactly as in the working app -->
     <script src="https://js.puter.com/v2/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif; 
@@ -16,7 +17,9 @@
             flex-direction: column;
             align-items: center;
         }
-        .ai-status {
+        
+        /* AI Status Indicator Styles matches fitness app */
+        .status-indicator {
             padding: 8px 15px;
             border-radius: 15px;
             font-size: 14px;
@@ -26,9 +29,9 @@
             width: 100%;
             max-width: 600px;
         }
-        .status-connected { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .status-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .status-testing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .status-connected { background-color: rgba(76, 175, 80, 0.3); color: #2e7d32; }
+        .status-error { background-color: rgba(244, 67, 54, 0.3); color: #c62828; }
+        .status-testing { background-color: rgba(255, 152, 0, 0.3); color: #ef6c00; }
 
         .input-section, .voice-selector-section, #test-section, #teach-section {
             background-color: #fff;
@@ -42,50 +45,18 @@
             flex-direction: column;
             gap: 10px;
         }
-        .input-section label, .voice-selector-section label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+        .input-section label, .voice-selector-section label { font-weight: bold; margin-bottom: 5px; }
         .input-section textarea {
-            width: 98%; 
-            min-height: 100px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1.1em;
-            resize: vertical;
+            width: 98%; min-height: 100px; padding: 10px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 1.1em; resize: vertical;
         }
-        .options-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 5px 0;
-            flex-wrap: wrap;
-        }
-        .options-row input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-        .options-row label {
-            cursor: pointer;
-            user-select: none;
-            font-weight: normal;
-        }
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
+        .options-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
+        .options-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .options-row label { cursor: pointer; user-select: none; font-weight: normal; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
         button {
-            padding: 12px 20px;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1.1em;
-            transition: background-color 0.2s;
-            flex: 1;
+            padding: 12px 20px; color: white; border: none; border-radius: 4px;
+            cursor: pointer; font-size: 1.1em; transition: background-color 0.2s; flex: 1;
         }
         button:disabled { background-color: #cccccc !important; cursor: not-allowed; }
         #process-text-button { background-color: #007bff; }
@@ -93,36 +64,22 @@
         #start-test-button { background-color: #28a745; }
         #start-test-button:hover { background-color: #218838; }
         
-        #voice-select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            font-size: 1em;
-            background-color: white;
-        }
+        #voice-select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 1em; background-color: white; }
 
         #character-grid-output {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-            gap: 15px;
-            padding: 15px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 900px; 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+            gap: 15px; padding: 15px; background-color: #fff; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 900px; 
         }
 
         .hanzi-item-container { 
-            display: flex; flex-direction: column; align-items: center;
-            border: 1px solid #ddd; border-radius: 4px; 
-            background-color: #f9f9f9; padding: 8px 8px 0 8px; 
+            display: flex; flex-direction: column; align-items: center; border: 1px solid #ddd;
+            border-radius: 4px; background-color: #f9f9f9; padding: 8px 8px 0 8px; 
             min-height: 140px; box-sizing: border-box; overflow: hidden; 
         }
 
         .hanzi-box-item { 
-            width: 70px; height: 70px; position: relative; 
-            cursor: pointer; border: 1px solid #eee; margin-bottom: 10px; 
+            width: 70px; height: 70px; position: relative; cursor: pointer; border: 1px solid #eee; margin-bottom: 10px; 
         }
         .hanzi-box-item:hover { border-color: #007bff; }
         .hanzi-box-item > svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
@@ -136,10 +93,8 @@
         .static-hanzi-text { font-size: 2em; color: #ffffff; line-height: 1; }
 
         .audio-button {
-            background: none; border: none; cursor: pointer; font-size: 1.5em; 
-            padding: 0; color: #ffffff; line-height: 1; 
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "emoji", sans-serif;
-            flex: none;
+            background: none; border: none; cursor: pointer; font-size: 1.5em; padding: 0;
+            color: #ffffff; line-height: 1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "emoji", sans-serif; flex: none;
         }
         .audio-button:hover { color: #d0e0ff; }
 
@@ -174,30 +129,7 @@
         .option-btn:disabled { cursor: not-allowed; opacity: 0.9; }
         #end-test-btn { background-color: #6c757d; margin-top: 15px; }
 
-        /* AI Intervention Modal */
-        #intervention-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
-        }
-        .intervention-content {
-            background: linear-gradient(135deg, #ffffff, #f0f8ff);
-            width: 90%; max-width: 600px; padding: 30px; border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); text-align: center;
-            max-height: 90vh; overflow-y: auto; position: relative;
-        }
-        .intervention-title { font-size: 1.5em; color: #d9534f; margin-bottom: 20px; font-weight: bold; }
-        .intervention-top-word { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; }
-        .intervention-top-word .test-char-box { width: 80px; height: 80px; border: 1px dashed #ccc; border-radius: 8px; }
-        .intervention-report {
-            background-color: #fff; padding: 15px; border-radius: 8px; 
-            border-left: 5px solid #007bff; margin-bottom: 20px; text-align: left;
-            font-size: 1.1em; line-height: 1.5; color: #333;
-        }
-        .intervention-sentence-box { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 20px 0; }
-        .intervention-sentence-box .test-char-box { width: 60px; height: 60px; border: 1px solid #eee; }
-        .intervention-sentence-details { text-align: left; background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        #continue-test-btn { background-color: #28a745; width: 100%; padding: 15px; font-size: 1.2em; font-weight: bold;}
-        
+        /* AI Loading Spinner */
         .ai-loading-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.9); display: none; justify-content: center;
@@ -209,12 +141,33 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* AI Intervention Modal */
+        #intervention-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .intervention-content {
+            background: linear-gradient(135deg, #ffffff, #f0f8ff); width: 90%; max-width: 600px;
+            padding: 30px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); text-align: center;
+            max-height: 90vh; overflow-y: auto; position: relative;
+        }
+        .intervention-title { font-size: 1.5em; color: #d9534f; margin-bottom: 20px; font-weight: bold; }
+        .intervention-top-word { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; }
+        .intervention-top-word .test-char-box { width: 80px; height: 80px; border: 1px dashed #ccc; border-radius: 8px; }
+        .intervention-report {
+            background-color: #fff; padding: 15px; border-radius: 8px; border-left: 5px solid #007bff;
+            margin-bottom: 20px; text-align: left; font-size: 1.1em; line-height: 1.5; color: #333;
+        }
+        .intervention-sentence-box { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 20px 0; }
+        .intervention-sentence-box .test-char-box { width: 60px; height: 60px; border: 1px solid #eee; }
+        .intervention-sentence-details { text-align: left; background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        #continue-test-btn { background-color: #28a745; width: 100%; padding: 15px; font-size: 1.2em; font-weight: bold;}
     </style>
 </head>
 <body>
 
     <h1>Hanzi Grid & Memory Test</h1>
-    <div id="ai-status" class="ai-status status-testing">Testing connection to Puter.ai...</div>
+    <div id="ai-status" class="status-indicator status-testing">Testing connection to Puter.ai...</div>
 
     <div class="input-section">
         <label for="chinese-text-input">Enter Chinese Text:</label>
@@ -232,8 +185,8 @@
         </div>
 
         <div class="btn-group">
-            <button id="process-text-button">Show Characters Grid</button>
-            <button id="start-test-button">Start Memory Test (5s)</button>
+            <button id="process-text-button" disabled>Loading AI...</button>
+            <button id="start-test-button" disabled>Loading AI...</button>
         </div>
     </div>
 
@@ -289,7 +242,7 @@
             
             <div id="intervention-loading">
                 <div class="spinner" style="margin: 0 auto;"></div>
-                <p>AI is generating a smart mnemonic...</p>
+                <p>AI is analyzing and generating a smart mnemonic...</p>
             </div>
 
             <div id="intervention-result" style="display: none;">
@@ -307,8 +260,8 @@
 
     <script>
         // --- HSK DATABASE ---
-        // !!! PASTE YOUR MASSIVE rawVocab STRING HERE MANUALLY !!!
-         const rawVocab = "爱|ài|to love^八|bā|eight^爸爸|bàba|dad^吧|ba|particle indicating suggestion^白天|báitiān|daytime^百|bǎi|hundred^半|bàn|half^包子|bāozi|steamed stuffed bun^杯子|bēizi|cup, glass^本|běn|measure word for books^边|biān|side; direction^病|bìng|illness, disease^不|bù|not, no^不客气|bú kèqi|you're welcome^不要|búyào|don't, not want^菜|cài|vegetable, dish^茶|chá|tea^唱|chàng|to sing^超市|chāoshì|supermarket^车|chē|vehicle, car^吃|chī|to eat^出租车|chūzūchē|taxi^穿|chuān|to wear^打电话|dǎ diànhuà|to make a phone call^大|dà|big^大家|dàjiā|everyone^大学|dàxué|university^大学生|dàxuéshēng|university student^到|dào|to arrive^的|de|possessive or modifying particle^第|dì|prefix for ordinal numbers^弟弟|dìdi|younger brother^点|diǎn|measure word; point, dot^店|diàn|shop, store^电话|diànhuà|telephone^电脑|diànnǎo|computer^电视|diànshì|television^电影|diànyǐng|movie, film^电影院|diànyǐngyuàn|cinema^东西|dōngxi|thing, object^都|dōu|all, both^读|dú|to read^读书|dúshū|to read a book^对|duì|correct, right^对不起|duìbuqǐ|sorry^多|duō|many, much^多少|duōshao|how many, how much^儿子|érzi|son^二|èr|two^饭|fàn|cooked rice, meal^饭店|fàndiàn|restaurant^房间|fángjiān|room^非常|fēicháng|very, extremely^飞机|fēijī|airplane^分|fēn|minute; to divide^分钟|fēnzhōng|minute^高兴|gāoxìng|happy, glad^歌|gē|song^哥哥|gēge|older brother^个|gè|measure word for general objects^给|gěi|to give^公司|gōngsī|company^工作|gōngzuò|work^狗|gǒu|dog^贵|guì|expensive^国|guó|country^还|hái|still, also; quite^孩子|háizi|child^汉语|Hànyǔ|Chinese language^汉字|Hànzì|Chinese character^好|hǎo|good; well^好吃|hǎochī|delicious, tasty^好看|hǎokàn|good-looking^好听|hǎotīng|pleasant to listen to^好玩儿|hǎowánr|fun, amusing^号|hào|number; measure word^喝|hē|to drink^和|hé|and, with^很|hěn|very^后|hòu|behind, later^回|huí|to return^会|huì|can, to be able to^火车|huǒchē|train^鸡蛋|jīdàn|egg^几|jǐ|how many, a few^家|jiā|home, family^家人|jiārén|family member^见|jiàn|to see^件|jiàn|measure word for items^饺子|jiǎozi|dumpling^叫|jiào|to be called^姐姐|jiějie|older sister^今年|jīnnián|this year^今天|jīntiān|today^九|jiǔ|nine^觉得|juéde|to feel, to think^开|kāi|to open^开车|kāichē|to drive^看|kàn|to see, to look^看病|kànbìng|to see a doctor^看见|kànjiàn|to see^可以|kěyǐ|can, may^课|kè|class, lesson^口|kǒu|mouth; measure word^块|kuài|measure word for pieces, money^来|lái|to come^老师|lǎoshī|teacher^了|le|particle indicating completed action^冷|lěng|cold^里|lǐ|inside, in, mile^两|liǎng|two^零|líng|zero^六|liù|six^妈妈|māma|mom^吗|ma|question particle^买|mǎi|to buy^卖|mài|to sell^忙|máng|busy^猫|māo|cat^没关系|méi guānxi|never mind, it's okay^没事|méishì|have nothing to do^没有|méiyǒu|to not have^妹妹|mèimei|younger sister^们|men|plural suffix^米饭|mǐfàn|cooked rice^面包|miànbāo|bread^面条儿|miàntiáor|noodles^明年|míngnián|next year^明天|míngtiān|tomorrow^名字|míngzi|name^哪|nǎ|which^哪个|nǎge|which one^哪里|nǎlǐ|where^哪儿|nǎr|where^哪些|nǎxiē|which ones^那|nà|that^那边|nàbiān|over there^那个|nàge|that one^那里|nàlǐ|there^那儿|nàr|there^那些|nàxiē|those^男|nán|male^男朋友|nánpéngyou|boyfriend^呢|ne|question or continuation particle^能|néng|can, be able to^你|nǐ|you^你好|nǐ hǎo|hello^你们|nǐmen|you plural^年|nián|year^您|nín|you (polite)^牛奶|niúnǎi|milk^女|nǚ|female^女儿|nǚ'ér|daughter^女朋友|nǚpéngyou|girlfriend^女士|nǚshì|lady, Ms.^朋友|péngyou|friend^便宜|piányi|cheap^漂亮|piàoliang|beautiful^苹果|píngguǒ|apple^七|qī|seven^起床|qǐchuáng|to get up^千|qiān|thousand^前|qián|front, before^钱|qián|money^请|qǐng|please^请问|qǐngwèn|may I ask^去|qù|to go^去年|qùnián|last year^热|rè|hot^人|rén|person^认识|rènshi|to know, to recognize^日|rì|measure word for days^三|sān|three^商店|shāngdiàn|store, shop^上|shàng|up, above; to go up^上班|shàngbān|to go to work^上课|shàngkè|to attend class^上午|shàngwǔ|morning^上学|shàngxué|to go to school^少|shǎo|few, little^谁|shéi|who^什么|shénme|what^生病|shēngbìng|to get sick^十|shí|ten^时候|shíhou|moment, time^时间|shíjiān|time^事|shì|matter, thing^是|shì|to be^手机|shǒujī|cell phone^书|shū|book^书店|shūdiàn|bookstore^水|shuǐ|water^水果|shuǐguǒ|fruit^睡|shuì|to sleep^睡觉|shuìjiào|to sleep^说|shuō|to speak, to say^说话|shuōhuà|to talk^四|sì|four^岁|suì|measure word for age^他|tā|he, him^它|tā|it^她|tā|she^他们|tāmen|they^它们|tāmen|they^她们|tāmen|they^太|tài|too, extremely^天|tiān|day^天气|tiānqì|weather^听|tīng|to listen^听见|tīngjiàn|to hear^同学|tóngxué|classmate^外|wài|outside, exterior^外边|wàibian|outside^玩|wán|to play^晚|wǎn|late^晚饭|wǎnfàn|dinner^晚上|wǎnshang|evening^喂|wèi|hello (used when answering the phone)^问|wèn|to ask^问题|wèntí|question^我|wǒ|I^我们|wǒmen|we^五|wǔ|five^午饭|wǔfàn|lunch^喜欢|xǐhuan|to like^下|xià|down, below^下雨|xià yǔ|to rain^下班|xiàbān|to get off work^下课|xiàkè|to finish class^下午|xiàwǔ|afternoon^先生|xiānsheng|Mr., husband^现在|xiànzài|now^想|xiǎng|to think; to want^小|xiǎo|small^小朋友|xiǎopéngyǒu|little friend, child^小时|xiǎoshí|hour^小学|xiǎoxué|primary school^小学生|xiǎoxuéshēng|primary school student^些|xiē|measure word for an indefinite amount^写|xiě|to write^谢谢|xièxie|to thank^新|xīn|new^星期|xīngqī|week^星期日|xīngqīrì|Sunday^星期天|xīngqītiān|Sunday^休息|xiūxi|to rest^学|xué|to learn, to study^学生|xuéshēng|student^学习|xuéxí|to study^学校|xuéxiào|school^雪|xuě|snow^要|yào|to want, to need^也|yě|also, too^一|yī|one^衣服|yīfu|clothes^医生|yīshēng|doctor^医院|yīyuàn|hospital^一半|yíbàn|half^一下|yíxià|once, a little^椅子|yǐzi|chair^一点儿|yìdiǎnr|a little, a bit^一些|yìxiē|some, a few^有|yǒu|to have, to exist^有的|yǒude|some of them^有点儿|yǒudiǎnr|a little, slightly^有些|yǒuxiē|some, some of^雨|yǔ|rain^元|yuán|yuan^月|yuè|month; moon^再|zài|again, then^在|zài|to be at; at^再见|zàijiàn|goodbye^早|zǎo|early^早饭|zǎofàn|breakfast^早上|zǎoshang|morning^怎么|zěnme|how^怎么样|zěnmeyàng|how about^找|zhǎo|to look for^这|zhè|this^这边|zhèbiān|here^这个|zhège|this one^这里|zhèlǐ|here^这儿|zhèr|here^这些|zhèxiē|these^真|zhēn|really^正在|zhèngzài|in the process of^只|zhī|measure word for animals^知道|zhīdào|to know^中国|Zhōngguó|China^中文|Zhōngwén|Chinese language^中午|zhōngwǔ|noon^中学|zhōngxué|middle school^中学生|zhōngxuéshēng|middle school student^住|zhù|to live, to reside^桌子|zhuōzi|table, desk^字|zì|character, script^昨天|zuótiān|yesterday^坐|zuò|to sit^做|zuò|to do, to make^做饭|zuò fàn|to cook^啊|a|ah, oh^爱好|àihào|to like; hobby^白色|báisè|white^班|bān|class, team^帮|bāng|to help^帮忙|bāngmáng|to help^包|bāo|to wrap, to pack; bag^本子|běnzi|notebook^比|bǐ|to compare; than^笔|bǐ|pen^别|bié|don't^不错|búcuò|not bad^不好意思|bù hǎoyìsi|sorry, embarrassed^长|cháng|long^车站|chēzhàn|station^出|chū|to go out^出国|chūguó|to go abroad^出来|chūlái|to come out^出门|chūmén|to go out^出去|chūqù|to go out^床|chuáng|bed^词|cí|word, term^次|cì|measure word of time or occasion^从|cóng|from^从小|cóngxiǎo|from childhood^错|cuò|wrong^打|dǎ|to hit, to play^打车|dǎchē|to take a taxi^打开|dǎkāi|to open^但|dàn|but^但是|dànshì|but^得|de|particle indicating degree or manner^地|de|particle modifying an adjective into an adverb^等|děng|to wait^地铁|dìtiě|subway^点|diǎn|to light; point^懂|dǒng|to understand^动|dòng|to move^饭馆|fànguǎn|restaurant^飞|fēi|to fly^高|gāo|tall^高中|gāozhōng|high school^告诉|gàosu|to tell^个子|gèzi|height^跟|gēn|with; and^公交车|gōngjiāochē|bus^过|guò|to pass^过来|guòlái|to come over^过年|guònián|to celebrate the New Year^过去|guòqù|to go over^过|guo|particle indicating past experience^还是|háishi|still; or^黑色|hēisè|black^红茶|hóngchá|black tea^红色|hóngsè|red^后面|hòumiàn|behind^花|huā|to spend^花|huā|flower^画|huà|to draw; painting^坏|huài|bad^回来|huílái|to come back^回去|huíqù|to go back^机场|jīchǎng|airport^机票|jīpiào|airplane ticket^记得|jìde|to remember^间|jiān|measure word for rooms^教|jiāo|to teach^教室|jiàoshì|classroom^介绍|jièshào|to introduce^进|jìn|to enter^近|jìn|near^进来|jìnlái|to come in^进去|jìnqù|to go in^经常|jīngcháng|often^酒店|jiǔdiàn|hotel^就|jiù|just, then^咖啡|kāfēi|coffee^开始|kāishǐ|to start^开学|kāixué|school starts^考|kǎo|to test^考试|kǎoshì|to take an exam; exam^可能|kěnéng|possible^裤子|kùzi|pants^快|kuài|fast^快乐|kuàilè|happy^快要|kuàiyào|soon^篮球|lánqiú|basketball^累|lèi|tired^离|lí|to leave^里面|lǐmiàn|inside^楼|lóu|building^路|lù|road^路上|lùshang|on the road^旅游|lǚyóu|to travel^绿茶|lǜchá|green tea^绿色|lǜsè|green^慢|màn|slow^没意思|méi yìsi|boring^每|měi|every^门|mén|door^门口|ménkǒu|doorway^门票|ménpiào|ticket^面|miàn|suffix^名|míng|name^拿|ná|to take^那么|nàme|so^那样|nàyàng|like that^奶茶|nǎichá|milk tea^奶奶|nǎinai|grandmother^男孩儿|nánháir|boy^鸟|niǎo|bird^女孩儿|nǚháir|girl^旁边|pángbiān|side^跑|pǎo|to run^跑步|pǎobù|to run^票|piào|ticket^妻子|qīzi|wife^起来|qǐlái|to get up^前面|qiánmiàn|front^晴|qíng|sunny^球|qiú|ball^让|ràng|to let^肉|ròu|meat^商场|shāngchǎng|shopping mall^上来|shànglái|to come up^上面|shàngmiàn|above^上去|shàngqù|to go up^上网|shàngwǎng|to go online^身体|shēntǐ|body^生日|shēngrì|birthday^时|shí|time^事情|shìqing|matter^手|shǒu|hand^手表|shǒubiǎo|watch^书包|shūbāo|backpack^舒服|shūfu|comfortable^送|sòng|to give^虽然|suīrán|although^所以|suǒyǐ|so^疼|téng|painful^踢|tī|to kick^题|tí|question^条|tiáo|measure word^跳舞|tiàowǔ|to dance^头|tóu|head^外国|wàiguó|foreign country^外面|wàimiàn|outside^完|wán|to finish^万|wàn|ten thousand^往|wǎng|toward^网上|wǎngshàng|online^忘|wàng|to forget^位|wèi|measure word for people^为什么|wèi shénme|why^希望|xīwàng|to hope^洗|xǐ|to wash^洗手间|xǐshǒujiān|restroom^下来|xiàlái|to come down^下面|xiàmiàn|below^下去|xiàqù|to go down^小孩儿|xiǎoháir|child^小时候|xiǎoshíhou|childhood^笑|xiào|to laugh^姓|xìng|surname^姓名|xìngmíng|full name^颜色|yánsè|color^眼睛|yǎnjìng|eye^药|yào|medicine^药店|yàodiàn|pharmacy^爷爷|yéye|grandfather^一会儿|yíhuìr|a while^已经|yǐjīng|already^一起|yìqǐ|together^意思|yìsi|meaning^阴|yīn|cloudy^因为|yīnwèi|because^游|yóu|to swim^游泳|yóuyǒng|to swim^有意思|yǒu yìsi|interesting^有时|yǒushí|sometimes^右|yòu|right^右边|yòubian|right side^鱼|yú|fish^远|yuǎn|far^运动|yùndòng|sports^站|zhàn|station^丈夫|zhàngfu|husband^这么|zhème|so^这样|zhèyàng|like this^着|zhe|particle indicating ongoing action or state^正|zhèng|just^周|zhōu|week^准备|zhǔnbèi|to prepare^自己|zìjǐ|oneself^走|zǒu|to walk^走路|zǒulù|to walk^足球|zúqiú|soccer^最|zuì|most^左|zuǒ|left^左边|zuǒbian|left side^阿姨|āyí|aunt^矮|ǎi|short^爱人|àiren|spouse^安静|ānjìng|quiet^安全|ānquán|safe^把|bǎ|measure word for objects with handles^搬|bān|to move^班级|bānjí|class^搬家|bānjiā|to move house^办|bàn|to do^办法|bànfǎ|way^办公室|bàngōngshì|office^半天|bàntiān|half a day^帮助|bāngzhù|help^饱|bǎo|full^报纸|bàozhǐ|newspaper^北|běi|north^北方|běifāng|north^被|bèi|by^笔记|bǐjì|notes^比较|bǐjiào|to compare; relatively^笔记本|bǐjìběn|notebook^比如|bǐrú|for example^比赛|bǐsài|to compete; game^必须|bìxū|must^变|biàn|to change^遍|biàn|measure word for actions^变成|biànchéng|to become^变化|biànhuà|to change^表演|biǎoyǎn|to perform^别的|biéde|other^别人|biérén|other people^宾馆|bīnguǎn|hotel^冰|bīng|ice^冰激凌|bīngjīlíng|ice cream^冰箱|bīngxiāng|refrigerator^病人|bìngrén|patient^不但|búdàn|not only^不见|bújiàn|to disappear^不用|búyòng|need not^不同|bù tóng|different^不久|bùjiǔ|soon^不行|bùxíng|not allowed^才|cái|just^菜单|càidān|menu^参加|cānjiā|to join^草|cǎo|grass^草地|cǎodì|grassland^层|céng|layer^查|chá|to check^差|chà|bad; to lack^差不多|chàbuduō|almost^尝|cháng|to taste^常|cháng|often^常见|cháng jiàn|common^常用|cháng yòng|commonly used^常常|chángcháng|often^衬衫|chènshān|shirt^成绩|chéngjì|score^城市|chéngshì|city^迟到|chídào|to be late^出发|chūfā|to set out^出生|chūshēng|to be born^出院|chūyuàn|to be discharged from hospital^初中|chūzhōng|junior high school^除了|chúle|except^船|chuán|boat^春天|chūntiān|spring^词典|cídiǎn|dictionary^聪明|cōngmíng|smart^打扫|dǎsǎo|to clean^打算|dǎsuàn|to plan^大概|dàgài|general; probably^大人|dàren|adult^大小|dàxiǎo|size^大熊猫|dàxióngmāo|giant panda^大衣|dàyī|coat^带|dài|to bring^担心|dānxīn|to worry^蛋糕|dàngāo|cake^当然|dāngrán|of course^到处|dàochù|everywhere^得|dé|to get^得到|dédào|to get^得分|défēn|to score^的话|dehuà|if...^得|děi|must^灯|dēng|lamp^地|dì|ground^地点|dìdiǎn|place^地方|dìfang|place^地图|dìtú|map^电|diàn|electricity^电梯|diàntī|elevator^电子书|diànzǐshū|e-book^丢|diū|to lose^东|dōng|east^东北|dōngběi|northeast^东方|dōngfāng|east^东南|dōngnán|southeast^冬天|dōngtiān|winter^懂得|dǒngde|to understand^动物|dòngwù|animal^动物园|dòngwùyuán|zoo^短|duǎn|short^短裤|duǎnkù|shorts^段|duàn|segment^锻炼|duànliàn|to exercise^对话|duìhuà|dialogue^饿|è|hungry^而且|érqiě|and^耳朵|ěrduo|ear^耳机|ěrjī|earphone^发|fā|to send^发烧|fāshāo|to have a fever^发生|fāshēng|to happen^发现|fāxiàn|to find^发展|fāzhǎn|to develop^方便|fāngbiàn|convenient^方便面|fāngbiànmiàn|instant noodles^方法|fāngfǎ|method^方向|fāngxiàng|direction^房子|fángzi|house^放|fàng|to put^放假|fàngjià|to have a holiday^放心|fàngxīn|to relax^放学|fàngxué|school is over^分开|fēnkāi|to separate^风|fēng|wind^封|fēng|measure word for letters^夫妻|fūqī|husband and wife^服务|fúwù|to serve^附近|fùjìn|nearby^复习|fùxí|to review^该|gāi|should^干净|gānjìng|clean^感兴趣|gǎn xìngqù|to be interested in^感到|gǎndào|to feel^感冒|gǎnmào|cold^干|gàn|to do^刚|gāng|just^刚才|gāngcái|just now^刚刚|gānggāng|just now^高铁|gāotiě|high-speed rail^根据|gēnjù|according to^更|gèng|more^公斤|gōngjīn|kilogram^公园|gōngyuán|park^工作日|gōngzuòrì|workday^故事|gùshi|story^刮|guā|to scrape^关|guān|to close^关机|guānjī|to turn off device^关系|guānxì|relationship^关心|guānxīn|to care about^关于|guānyú|about^关注|guānzhù|to pay attention to^国家|guójiā|country^过节|guòjié|to celebrate a festival^过去|guòqù|past^海|hǎi|sea^害怕|hàipà|to be afraid^好多|hǎoduō|many^好久|hǎojiǔ|a long time^好像|hǎoxiàng|to seem^号码|hàomǎ|number^河|hé|river^合适|héshì|suitable^黑板|hēibǎn|blackboard^红绿灯|hóng-lǜdēng|traffic light^后来|hòulái|later^后年|hòunián|the year after next^后天|hòutiān|the day after tomorrow^护照|hùzhào|passport^花园|huāyuán|garden^画家|huàjiā|painter^欢迎|huānyíng|to welcome^还|huán|to return^环境|huánjìng|environment^换|huàn|to exchange^黄色|huángsè|yellow^回答|huídá|to answer^会|huì|meeting^会议|huìyì|meeting^或|huò|or^或者|huòzhě|or^鸡|jī|chicken^几乎|jīhū|almost^机会|jīhuì|opportunity^极|jí|extremely^急|jí|urgent^记|jì|to remember^季|jì|season^季节|jìjié|season^加|jiā|to add^假期|jiàqī|vacation^坚持|jiānchí|to persist^检查|jiǎnchá|to check^简单|jiǎndān|simple^检票|jiǎnpiào|ticket checking^健康|jiànkāng|healthy^见面|jiànmiàn|to meet^讲|jiǎng|to speak^角|jiǎo|measure word for fractions^脚|jiǎo|foot^接|jiē|to pick up^街|jiē|street^节|jié|measure word for segments^结婚|jiéhūn|to marry^节目|jiémù|program^节日|jiérì|festival^结束|jiéshù|to end^解决|jiějué|to solve^姐妹|jiěmèi|sister^借|jiè|to borrow^斤|jīn|catty^经过|jīngguò|to pass^经理|jīnglǐ|manager^久|jiǔ|long^酒|jiǔ|alcohol^旧|jiù|old^句|jù|measure word of sentence^句子|jùzi|sentence^决定|juédìng|to decide^卡|kǎ|card^开花|kāihuā|to bloom^开会|kāihuì|to have a meeting^开机|kāijī|to turn on device^开心|kāixīn|happy^看来|kànlái|it seems^可|kě|but^渴|kě|thirsty^可爱|kě'ài|lovely^可是|kěshì|but^刻|kè|quarter^课本|kèběn|textbook^客人|kèrén|guest^课文|kèwén|text^空调|kōngtiáo|air conditioner^哭|kū|to cry^筷子|kuàizi|chopsticks^矿泉水|kuàngquánshuǐ|mineral water^来自|láizì|to come from^蓝|lán|blue^老|lǎo|old^老人|lǎorén|elderly person^离开|líkāi|to leave^礼物|lǐwù|gift^历史|lìshǐ|history^脸|liǎn|face^练|liàn|to practice^练习|liànxí|to practice; exercise^凉快|liángkuai|cool^辆|liàng|measure word for vehicles^聊|liáo|to chat^聊天儿|liáotiānr|to chat^了解|liǎojiě|to understand^邻居|línjū|neighbor^留学|liúxué|to study abroad^留学生|liúxuéshēng|overseas student^楼梯|lóutī|stairs^路边|lùbiān|roadside^路口|lùkǒu|intersection^马|mǎ|horse^马路|mǎlù|road^马上|mǎshàng|immediately^满意|mǎnyì|satisfied^毛|máo|measure word for money^米|mǐ|meter^面前|miànqián|in front of^明白|míngbai|to understand; clear^名单|míngdān|name list^名人|míngrén|famous person^南|nán|south^难|nán|difficult^南方|nánfāng|south^难过|nánguò|sad^难看|nánkàn|ugly^男人|nánrén|man^男生|nánshēng|boy student^难题|nántí|difficult problem^难听|nántīng|unpleasant to hear^年级|niánjí|grade^年轻|niánqīng|young^牛|niú|cow^努力|nǔlì|to work hard^女人|nǚrén|woman^女生|nǚshēng|girl student^爬|pá|to climb^怕|pà|to fear^拍照|pāizhào|to take a photo^盘子|pánzi|plate^胖|pàng|fat^啤酒|píjiǔ|beer^平时|píngshí|usually^瓶子|píngzi|bottle^骑|qí|to ride^奇怪|qíguài|strange^其实|qíshí|actually^其他|qítā|other^起|qǐ|to rise^起飞|qǐfēi|to take off^汽车|qìchē|car^铅笔|qiānbǐ|pencil^前年|qiánnián|the year before last^前天|qiántiān|the day before yesterday^清楚|qīngchu|clear^请假|qǐngjià|to ask for leave^请客|qǐngkè|to invite guests^秋天|qiūtiān|autumn^球场|qiúchǎng|sports field^裙子|qúnzi|skirt^然后|ránhòu|then^热情|rèqíng|enthusiastic^认得|rènde|to recognize^认为|rènwéi|to think^认真|rènzhēn|serious^容易|róngyì|easy^如果|rúguǒ|if^伞|sǎn|umbrella^扫|sǎo|to sweep^沙发|shāfā|sofa^山|shān|mountain^上衣|shàngyī|jacket^勺子|sháozi|spoon^身边|shēnbiān|by one's side^身高|shēngāo|height^声|shēng|sound^生活|shēnghuó|life^生气|shēngqì|to get angry^声音|shēngyīn|sound^市|shì|city^试|shì|to try^室|shì|room^世界|shìjiè|world^收|shōu|to receive^收到|shōudào|to receive^受|shòu|to receive^瘦|shòu|thin^受到|shòudào|to receive^叔叔|shūshu|uncle^树|shù|tree^数学|shùxué|mathematics^刷|shuā|to brush^双|shuāng|pair^水平|shuǐpíng|level^司机|sījī|driver^四季|sìjì|four seasons^太阳|tàiyáng|sun^糖|táng|candy^特别|tèbié|special^提高|tígāo|to raise^体育|tǐyù|physical education^体育馆|tǐyùguǎn|gymnasium^甜|tián|sweet^跳|tiào|to jump^听说|tīngshuō|to hear said^挺|tǐng|quite^同事|tóngshì|colleague^同意|tóngyì|to agree^头发|tóufa|hair^突然|tūrán|sudden^图书馆|túshūguǎn|library^腿|tuǐ|leg^外地|wàidì|other place^外卖|wàimài|takeaway^外语|wàiyǔ|foreign language^完成|wánchéng|to complete^碗|wǎn|bowl^晚点|wǎndiǎn|to be late^晚会|wǎnhuì|evening party^网球|wǎngqiú|tennis^网站|wǎngzhàn|website^忘记|wàngjì|to forget^为|wèi|for^为了|wèile|in order to^卫生间|wèishēngjiān|bathroom^文化|wénhuà|culture^屋子|wūzi|room^西|xī|west^西北|xīběi|northwest^西方|xīfāng|west^西瓜|xīguā|watermelon^西南|xīnán|southwest^习惯|xíguàn|habit^喜爱|xǐ'ài|to like^洗衣机|xǐyījī|washing machine^洗澡|xǐzǎo|to take a bath^夏天|xiàtiān|summer^先|xiān|first^香蕉|xiāngjiāo|banana^相信|xiāngxìn|to believe^箱子|xiāngzi|box^向|xiàng|toward^像|xiàng|to resemble^相机|xiàngjī|camera^小区|xiǎoqū|residential community^小心|xiǎoxīn|to be careful^校园|xiàoyuán|campus^校长|xiàozhǎng|principal^鞋|xié|shoe^心里|xīnlǐ|heart^新年|xīnnián|New Year^新闻|xīnwén|news^新鲜|xīnxiān|fresh^信|xìn|letter^信用卡|xìnyòngkǎ|credit card^行|xíng|okay^行李|xíngli|luggage^兴趣|xìngqù|interest^休假|xiūjià|to take a holiday^需要|xūyào|to need^选|xuǎn|to choose^选择|xuǎnzé|to choose^学期|xuéqī|semester^牙|yá|tooth^牙刷|yáshuā|toothbrush^羊|yáng|sheep^养|yǎng|to raise^要求|yāoqiú|to demand^页|yè|page^一定|yídìng|certain^一共|yígòng|altogether^一块儿|yíkuàir|together^一样|yíyàng|same^以后|yǐhòu|after^以前|yǐqián|before^以上|yǐshàng|above^以外|yǐwài|except^以为|yǐwéi|to think^以下|yǐxià|below^一般|yìbān|general^一边|yìbiān|at the same time^一直|yìzhí|always^音乐|yīnyuè|music^银行|yínháng|bank^银行卡|yínhángkǎ|bank card^饮料|yǐnliào|beverage^应该|yīnggāi|should^影响|yǐngxiǎng|to affect^用|yòng|to use^邮件|yóujiàn|mail^游客|yóukè|tourist^游戏|yóuxì|game^邮箱|yóuxiāng|mailbox^有关|yǒuguān|concerning^有名|yǒumíng|famous^有用|yǒuyòng|useful^又|yòu|again^羽毛球|yǔmáoqiú|badminton^语言|yǔyán|language^雨衣|yǔyī|raincoat^遇到|yùdào|to encounter^遇见|yùjiàn|to meet^园|yuán|garden^员|yuán|suffix for person^愿意|yuànyì|willing^越|yuè|more^月亮|yuèliang|moon^运动会|yùndònghuì|sports meet^运动员|yùndòngyuán|athlete^咱们|zánmen|we^脏|zāng|dirty^怎么办|zěnme bàn|what to do^怎样|zěnyàng|how^站|zhàn|station^张|zhāng|measure word^长|zhǎng|to grow^着急|zháojí|anxious^照|zhào|to shine^照顾|zhàogù|to take care of^照片|zhàopiàn|photo^照相|zhàoxiàng|to take a picture^直到|zhídào|until^只|zhǐ|only^纸|zhǐ|paper^只能|zhǐ néng|can only^只是|zhǐshì|only^只要|zhǐyào|as long as^只有|zhǐyǒu|only if^中|zhōng|middle^中间|zhōngjiān|middle^终于|zhōngyú|finally^种|zhǒng|kind^重要|zhòngyào|important^周末|zhōumò|weekend^主要|zhǔyào|main^注意|zhùyì|to pay attention to^住院|zhùyuàn|to be hospitalized^字典|zìdiǎn|dictionary^自行车|zìxíngchē|bicycle^子|zi|noun suffix^总|zǒng|always^总是|zǒngshì|always^嘴|zuǐ|mouth^最好|zuìhǎo|best^最后|zuìhòu|last^最近|zuìjìn|recently^做客|zuòkè|to be a guest^作业|zuòyè|homework^啊|a|ah, oh^爱情|àiqíng|love^爱心|àixīn|compassion, caring^安检|ānjiǎn|security check^安排|ānpái|to arrange^按|àn|to press; according to^按时|ànshí|on time^按照|ànzhào|according to^白酒|báijiǔ|liquor^办公|bàngōng|to handle official business^办理|bànlǐ|to handle^办事|bànshì|to handle matters^棒|bàng|great; stick^保护|bǎohù|to protect^保证|bǎozhèng|to guarantee; guarantee^抱|bào|to hold, embrace^报考|bàokǎo|to apply for an exam^报名|bàomíng|to sign up^抱歉|bàoqiàn|sorry^背|bēi|to carry on the back^背包|bēibāo|backpack^北部|běibù|northern part^倍|bèi|times, -fold^本科|běnkē|undergraduate program^本来|běnlái|original; originally^笨|bèn|stupid^鼻子|bízi|nose^笔试|bǐshì|written test^毕业|bìyè|to graduate^毕业生|bìyèshēng|graduate^便于|biànyú|to be convenient for^标准|biāozhǔn|standard^表|biǎo|watch, form; to express^表格|biǎogé|form^表示|biǎoshì|to express^表现|biǎoxiàn|to show, perform^表扬|biǎoyáng|to praise^饼干|bǐnggān|biscuit^并|bìng|to combine; actually; and^并且|bìngqiě|and, moreover^播放|bōfàng|to broadcast^博士|bóshì|doctor^不必|búbì|need not^不便|búbiàn|inconvenient^不断|búduàn|continuous^不够|búgòu|not enough^不过|búguò|but^不论|búlùn|no matter^步|bù|step^部|bù|department; measure word^不得不|bùdébù|have to^部分|bùfen|part^不管|bùguǎn|no matter^不光|bùguāng|not only^不仅|bùjǐn|not only^不满|bùmǎn|dissatisfied^部门|bùmén|department^不如|bùrú|not as good as^擦|cā|to wipe^猜|cāi|to guess^材料|cáiliào|material^参观|cānguān|to visit^参赛|cānsài|to enter a competition^餐厅|cāntīng|restaurant^操场|cāochǎng|playground^厕所|cèsuǒ|toilet^查看|chákàn|to check^茶叶|cháyè|tea leaf^查找|cházhǎo|to search for^差点儿|chàdiǎnr|almost^产生|chǎnshēng|to produce^厂|chǎng|factory^场|chǎng|measure word for events^超过|chāoguò|to exceed^车速|chēsù|vehicle speed^车位|chēwèi|parking space^城|chéng|city^乘|chéng|to ride, multiply^成功|chénggōng|to succeed; successful^乘客|chéngkè|passenger^诚实|chéngshí|honest^成为|chéngwéi|to become^乘坐|chéngzuò|to ride^吃惊|chījīng|to be startled^迟|chí|late^重|chóng|again^重新|chóngxīn|again^出差|chūchāi|to go on a business trip^出口|chūkǒu|exit; to export^出现|chūxiàn|to appear^出行|chūxíng|to travel^出租|chūzū|to rent out^厨房|chúfáng|kitchen^厨师|chúshī|chef^窗|chuāng|window^窗户|chuānghu|window^吹|chuī|to blow^词语|cíyǔ|word, phrase^此|cǐ|this^此次|cǐcì|this time^此外|cǐwài|besides^从此|cóngcǐ|from then on^从来|cónglái|always^从中|cóngzhōng|from among^粗|cū|coarse^粗心|cūxīn|careless^村|cūn|village^存|cún|to store^错过|cuòguò|to miss^错误|cuòwù|wrong; mistake^答应|dāying|to agree^答|dá|to answer^答案|dá'àn|answer^达到|dádào|to reach^打招呼|dǎ zhāohu|to greet^打败|dǎbài|to defeat^打工|dǎgōng|to work a temporary job^打扰|dǎrǎo|to disturb^打印|dǎyìn|to print^打印机|dǎyìnjī|printer^打折|dǎzhé|to give a discount^打针|dǎzhēn|to get an injection^大巴|dàbā|large bus^大大|dàdà|greatly^大夫|dàifu|doctor^大量|dàliàng|large quantity^大赛|dàsài|major competition^大厅|dàtīng|hall^大约|dàyuē|approximately^大自然|dàzìrán|nature^待|dāi|to stay^戴|dài|to wear^袋子|dàizi|bag^单位|dānwèi|unit^当|dāng|to serve as; at the time of^当时|dāngshí|at that time^刀|dāo|knife^导游|dǎoyóu|tour guide^倒|dào|to fall; however^道|dào|path; measure word^到底|dàodǐ|finally^到来|dàolái|to arrive^道路|dàolù|road^道歉|dàoqiàn|to apologize^得意|déyì|proud^登机|dēngjī|to board a plane^等|děng|and so on; class^等到|děngdào|until^低|dī|low; to lower^低价|dījià|low price^低温|dīwēn|low temperature^低于|dīyú|to be lower than^底|dǐ|bottom^底下|dǐxia|below^地球|dìqiú|earth^地址|dìzhǐ|address^点名|diǎnmíng|to call the roll^点头|diǎntóu|to nod^电动车|diàndòngchē|electric vehicle^电视剧|diànshìjù|TV drama^掉|diào|to fall^调查|diàochá|to investigate^订|dìng|to order^定|dìng|to fix^东部|dōngbù|eastern part^动车|dòngchē|high-speed train^动作|dòngzuò|movement^读者|dúzhě|reader^堵车|dǔchē|traffic jam^度假|dùjià|to go on vacation^肚子|dùzi|belly^短信|duǎnxìn|text message^队|duì|team; measure word^对方|duìfāng|the other party^对面|duìmiàn|opposite side^对于|duìyú|regarding^队员|duìyuán|team member^队长|duìzhǎng|team leader^顿|dùn|measure word for meals^多么|duōme|how^多数|duōshù|majority^多样|duōyàng|diverse^而|ér|but, and^儿童|értóng|child^发出|fāchū|to send out^发送|fāsòng|to send^法|fǎ|law^法律|fǎlǜ|law^翻译|fānyì|to translate; translation^烦|fán|annoyed^烦恼|fánnǎo|worried^反对|fǎnduì|to oppose^方面|fāngmiàn|aspect^方式|fāngshì|way^房东|fángdōng|landlord^房租|fángzū|rent^放弃|fàngqì|to give up^放松|fàngsōng|to relax^费|fèi|fee; to spend^费用|fèiyong|cost^分数|fēnshù|score^分为|fēnwéi|to be divided into^份|fèn|measure word for copies^丰富|fēngfù|rich^风景|fēngjǐng|scenery^否则|fǒuzé|otherwise^幅|fú|measure word for paintings^符合|fúhé|to conform to^付|fù|to pay^父母|fùmǔ|parents^父女|fùnǚ|father and daughter^父亲|fùqīn|father^复印|fùyìn|to photocopy^复杂|fùzá|complicated^负责|fùzé|to be responsible^负责人|fùzérén|person in charge^父子|fùzǐ|father and son^改|gǎi|to change^改变|gǎibiàn|to change^干|gān|dry^干杯|gānbēi|to toast^赶|gǎn|to hurry^敢|gǎn|to dare^感|gǎn|sense, feeling^感动|gǎndòng|moved; to move^赶紧|gǎnjǐn|quickly^感觉|gǎnjué|feeling; to feel^赶快|gǎnkuài|quickly^感情|gǎnqíng|emotion^感人|gǎnrén|touching^赶上|gǎnshàng|to catch up^感受|gǎnshòu|feeling; to feel^感谢|gǎnxiè|to thank^干活儿|gànhuór|to work^钢琴|gāngqín|piano^高价|gāojià|high price^高考|gāokǎo|college entrance exam^高速|gāosù|high speed^高温|gāowēn|high temperature^高于|gāoyú|higher than^胳膊|gēbo|arm^歌声|gēshēng|sound of singing^歌手|gēshǒu|singer^各|gè|each^各地|gèdì|various places^各个|gègè|each^各位|gèwèi|everyone^各种|gèzhǒng|various kinds^更加|gèngjiā|more^工厂|gōngchǎng|factory^功夫|gōngfu|kung fu^公共|gōnggòng|public^功课|gōngkè|schoolwork^公里|gōnglǐ|kilometer^公路|gōnglù|highway^工人|gōngrén|worker^工资|gōngzī|wage^共|gòng|together^共同|gòngtóng|common^够|gòu|enough^购买|gòumǎi|to purchase^购物|gòuwù|to shop^估计|gūjì|to estimate^姑娘|gūniang|girl^鼓励|gǔlì|to encourage^顾客|gùkè|customer^故意|gùyì|deliberately^挂|guà|to hang^关键|guānjiàn|crux; key^观看|guānkàn|to watch^观众|guānzhòng|audience^管|guǎn|control; pipe^管理|guǎnlǐ|manage^光|guāng|light; only^广播|guǎngbō|broadcast^广告|guǎnggào|advertisement^逛|guàng|stroll^规定|guīdìng|stipulate; regulation^国籍|guójí|nationality^国际|guójì|international^果汁|guǒzhī|fruit juice^过程|guòchéng|process^海洋|hǎiyáng|ocean^害羞|hàixiū|shy^寒假|hánjià|winter vacation^寒冷|hánlěng|cold^喊|hǎn|shout^汗|hàn|sweat^航班|hángbān|flight^好处|hǎochu|benefit^好好|hǎohāo|good; well^好笑|hǎoxiào|funny^合格|hégé|qualified^盒子|hézi|box^红包|hóngbāo|red envelope^厚|hòu|thick^后悔|hòuhuǐ|regret^忽然|hūrán|suddenly^互联网|hùliánwǎng|Internet^护士|hùshi|nurse^互相|hùxiāng|each other^话剧|huàjù|drama^怀疑|huáiyí|doubt^坏处|huàichù|disadvantage^环保|huánbǎo|environmental protection^换乘|huànchéng|transfer^回复|huífù|reply^回信|huíxìn|reply to a letter^回忆|huíyì|memory^会员|huìyuán|membership^活|huó|live; alive^活动|huódòng|move; activity^活泼|huópō|lively^火|huǒ|fire; popular^货|huò|goods^获得|huòdé|get^获奖|huòjiǎng|win a prize^获取|huòqǔ|gain^基本|jīběn|basic^基本上|jīběnshàng|basically^基础|jīchǔ|Basics^激动|jīdòng|excited^积极|jījí|positive^积累|jīlěi|to accumulate^及时|jíshí|timely^即使|jíshǐ|even if^既|jì|both...and...^寄|jì|send^计划|jìhuà|plan^既然|jìrán|since^技术|jìshù|technology^继续|jìxù|continue^记者|jìzhě|reporter^加班|jiābān|work overtime^家具|jiājù|furniture^加快|jiākuài|speed up^加强|jiāqiáng|strengthen^加入|jiārù|join^加上|jiāshàng|plus^家庭|jiātíng|family^家乡|jiāxiāng|hometown^加油|jiāyóu|oil; make an effort^加油站|jiāyóuzhàn|gas station^家长|jiāzhǎng|parent^假|jiǎ|false^价格|jiàgé|price^价钱|jiàqian|price^假日|jiàrì|holiday^减|jiǎn|to reduce^减轻|jiǎnqīng|to lighten^减少|jiǎnshǎo|to reduce^健身|jiànshēn|to exercise^健身房|jiànshēnfáng|gym^建议|jiànyì|to suggest; suggestion^江|jiāng|river^将|jiāng|will; with^将来|jiānglái|future^将要|jiāngyào|will^奖|jiǎng|prize; to award^奖金|jiǎngjīn|bonus^奖学金|jiǎngxuéjīn|scholarship^降|jiàng|to fall^降低|jiàngdī|to reduce^降价|jiàngjià|to reduce price^降落|jiàngluò|to descend^降温|jiàngwēn|to cool down^交|jiāo|to hand in; friend^骄傲|jiāo'ào|proud^交警|jiāojǐng|traffic police^交流|jiāoliú|communicate^郊区|jiāoqū|suburb^交通|jiāotōng|traffic^教练|jiàoliàn|coach^教师|jiàoshī|teacher^教授|jiàoshòu|professor^教学|jiàoxué|teach^教育|jiàoyù|education^叫作|jiàozuò|be called^街道|jiēdào|street^接受|jiēshòu|accept^接着|jiēzhe|to continue; then^结果|jiéguǒ|result^节假日|jiéjiàrì|festivals and holidays^节约|jiéyuē|to save^结账|jiézhàng|to pay the bill^解释|jiěshì|to explain^今后|jīnhòu|from now on^仅|jǐn|only^尽管|jǐnguǎn|although^仅仅|jǐnjǐn|only^紧张|jǐnzhāng|nervous^进入|jìnrù|to enter^进行|jìnxíng|to carry out^禁止|jìnzhǐ|to prohibit^精彩|jīngcǎi|brilliant^经济|jīngjì|economy; economical^京剧|jīngjù|Beijing opera^经历|jīnglì|to experience; experience^经验|jīngyàn|experience^警察|jǐngchá|police^景点|jǐngdiǎn|scenic spot^景区|jǐngqū|scenic area^景色|jǐngsè|scenery^竟然|jìngrán|unexpectedly^竞争|jìngzhēng|compete^镜子|jìngzi|mirror^究竟|jiūjìng|actually^就是|jiùshì|precisely^举|jǔ|to raise^举办|jǔbàn|to hold^举例|jǔlì|to give an example^举行|jǔxíng|to hold^聚|jù|to gather^聚餐|jùcān|to have a dinner together^聚会|jùhuì|to get together^拒绝|jùjué|to refuse^距离|jùlí|distance^剧院|jùyuàn|theater^开玩笑|kāi wánxiào|make fun of^看法|kànfǎ|view^烤|kǎo|to bake^考虑|kǎolǜ|to consider^考生|kǎoshēng|examinee^棵|kē|measure word for trees^科技|kējì|science and technology^科学|kēxué|science; scientific^咳|ké|to cough^咳嗽|késou|to cough^可惜|kěxī|regrettable^克|kè|gram^课程|kèchéng|curriculum^客气|kèqi|polite^课堂|kètáng|classroom^客厅|kètīng|living room^肯定|kěndìng|to be certain; surely^空|kōng|empty^空气|kōngqì|air^恐怕|kǒngpà|I'm afraid^空|kòng|empty; free time^口语|kǒuyǔ|spoken language^苦|kǔ|bitter^快餐|kuàicān|fast food^快递|kuàidì|express delivery^快速|kuàisù|fast^困|kùn|sleepy; to trap^困难|kùnnan|difficult^拉|lā|to pull^垃圾|lājī|garbage^辣|là|hot, spicy^来不及|láibùjí|there's not enough time^来得及|láidejí|there's still time^懒|lǎn|lazy^浪费|làngfèi|to waste^浪漫|làngmàn|romantic^老虎|lǎohǔ|tiger^老家|lǎojiā|hometown^老年|lǎonián|elderly^老是|lǎoshi|always^冷静|lěngjìng|calm^理发|lǐfà|to have a haircut^理解|lǐjiě|to understand^礼貌|lǐmào|courtesy; polite^理想|lǐxiǎng|ideal^厉害|lìhai|severe; impressive^力气|lìqi|strength^例如|lìrú|for example^例子|lìzi|example^俩|liǎ|two, both^连|lián|even; to connect^联系|liánxì|to contact^凉|liáng|cool^量|liáng|to measure^辆|liàng|measure word for vehicles^亮|liàng|bright^列|liè|to arrange; measure word for rows^零下|líng xià|below zero^零花钱|línghuāqián|pocket money^零钱|língqián|change^零食|língshí|snacks^另|lìng|other^另外|lìngwài|other; in addition^留|liú|to stay^流|liú|to flow^流利|liúlì|fluent^留下|liúxià|to leave behind^流行|liúxíng|to be popular^路过|lùguò|to pass by^旅馆|lǚguǎn|hotel^旅客|lǚkè|traveler^旅行|lǚxíng|to travel^律师|lǜshī|lawyer^乱|luàn|messy^落|luò|to fall^麻烦|máfan|troublesome^馒头|mántou|steamed bun^满|mǎn|full^毛巾|máojīn|towel^毛衣|máoyī|sweater^帽子|màozi|hat^美|měi|beautiful^美好|měihǎo|beautiful^美景|měijǐng|beautiful scenery^美丽|měilì|beautiful^美食|měishí|delicious food^梦|mèng|dream^梦想|mèngxiǎng|to dream; dream^密码|mìmǎ|password^免费|miǎnfèi|free of charge^面对|miànduì|to face^面试|miànshì|interview^秒|miǎo|second^民族|mínzú|ethnic group^末|mò|end^母女|mǔnǚ|mother and daughter^母亲|mǔqīn|mother^母子|mǔzǐ|mother and son^目标|mùbiāo|goal^目的|mùdì|purpose^目的地|mùdìdì|destination^目前|mùqián|currently^耐心|nàixīn|patient; patience^南部|nánbù|southern part^难道|nándào|could it be that...?^男士|nánshì|man^难受|nánshòu|uncomfortable^难忘|nánwàng|unforgettable^男性|nánxìng|male^内|nèi|inside^内容|nèiróng|content^内心|nèixīn|heart^能否|néng fǒu|whether or not^能够|nénggòu|can^能力|nénglì|ability^嗯|ng|uh-huh^年底|niándǐ|end of the year^年龄|niánlíng|age^农村|nóngcūn|rural area^弄|nòng|to do^女性|nǚxìng|female^暖和|nuǎnhuo|warm^偶尔|ǒu'ěr|occasionally^拍|pāi|to pat; to take photo^排|pái|to line up; row^牌|pái|card; brand^排队|páiduì|to line up^排球|páiqiú|volleyball^牌子|páizi|brand; sign^判断|pànduàn|to judge^陪|péi|to accompany^批评|pīpíng|to criticize^皮肤|pífū|skin^脾气|píqi|temperament^皮鞋|píxié|leather shoes^篇|piān|measure word for essays^片|piàn|piece; measure word^乒乓球|pīngpāngqiú|table tennis^平常|píngcháng|ordinary^破|pò|broken; to break^葡萄|pútáo|grape^葡萄酒|pútáojiǔ|wine^普遍|pǔbiàn|widespread^普通|pǔtōng|ordinary^普通话|pǔtōnghuà|Mandarin^期|qī|period; issue^期末|qīmò|end of term^期中|qīzhōng|midterm^其次|qícì|next^其中|qízhōng|among them^起到|qǐdào|to play the role of^气|qì|air; to anger^气候|qìhòu|climate^汽水|qìshuǐ|soda^气温|qìwēn|air temperature^千克|qiānkè|kilogram^千万|qiānwàn|ten million; by all means^签证|qiānzhèng|visa^前方|qiánfāng|ahead^前后|qiánhòu|around; about^强|qiáng|strong^敲|qiāo|to knock^桥|qiáo|bridge^巧|qiǎo|skillful^巧克力|qiǎokèlì|chocolate^亲戚|qīnqi|relative^琴|qín|musical instrument^轻|qīng|light^青年|qīngnián|youth^轻松|qīngsōng|relaxed^情况|qíngkuàng|situation^庆祝|qìngzhù|to celebrate^球队|qiúduì|sports team^球迷|qiúmí|fan^区|qū|district^区别|qūbié|difference; to distinguish^取|qǔ|to take^取得|qǔdé|to obtain^取消|qǔxiāo|to cancel^全|quán|whole^全部|quánbù|all^全都|quándōu|all^全球|quánqiú|the whole world^全身|quánshēn|whole body^缺|quē|to lack^缺点|quēdiǎn|shortcoming^缺少|quēshǎo|to lack^却|què|but^确实|quèshí|indeed^然而|rán'ér|however^热闹|rènao|lively^人生|rénshēng|life^人数|rénshù|number of people^人员|rényuán|personnel^任何|rènhé|any^任务|rènwu|task^扔|rēng|to throw^仍|réng|still^仍然|réngrán|still^日常|rìcháng|daily^日记|rìjì|diary^日期|rìqī|date^日子|rìzi|day; life^入|rù|to enter^入口|rùkǒu|entrance^入学|rùxué|to enter school^入住|rùzhù|to check in^散步|sànbù|to take a walk^扫码|sǎomǎ|to scan a code^森林|sēnlín|forest^商量|shāngliang|to discuss^商品|shāngpǐn|product^伤心|shāngxīn|sad^上门|shàngmén|to visit^稍|shāo|a little^稍微|shāowēi|a little^少见|shǎojiàn|rare^少量|shǎoliàng|small amount^少数|shǎoshù|minority^少年|shàonián|juvenile^社会|shèhuì|society^摄氏度|shèshìdù|degrees Celsius^身|shēn|body; measure word for clothes^深|shēn|deep^身份证|shēnfènzhèng|ID card^申请|shēnqǐng|to apply^甚至|shènzhì|even^生|shēng|to give birth; raw^生命|shēngmìng|life^生意|shēngyi|business^省|shěng|province^剩|shèng|to be left over^失败|shībài|to fail^师傅|shīfu|master^失去|shīqù|to lose^师生|shīshēng|teacher and student^失望|shīwàng|disappointed^十分|shífēn|very^实际|shíjì|reality; actual^时间表|shíjiānbiǎo|schedule^实际上|shíjìshàng|actually^食品|shípǐn|food^食堂|shítáng|cafeteria^食物|shíwù|food^实在|shízài|honest; really^十字路口|shízì lùkǒu|intersection^使|shǐ|to make^使馆|shǐguǎn|embassy^使用|shǐyòng|to use^市场|shìchǎng|market^是否|shìfǒu|whether or not^适合|shìhé|to suit^世纪|shìjì|century^视频|shìpín|video^市区|shìqū|urban area^试题|shìtí|test questions^适应|shìyìng|to adapt^收费|shōufèi|to charge a fee^收入|shōurù|income^收拾|shōushi|to put in order^收听|shōutīng|to listen in^首|shǒu|measure word for songs^首都|shǒudū|capital^首先|shǒuxiān|first^受不了|shòubuliǎo|to be unable to bear^售票员|shòupiàoyuán|ticket seller^受伤|shòushāng|to be injured^输|shū|to lose^熟|shú|ripe; familiar^熟悉|shúxī|to be familiar with^暑假|shǔjià|summer vacation^数|shù|number; several^数量|shùliàng|quantity^树林|shùlín|woods^数字|shùzì|digit^帅|shuài|handsome^顺便|shùnbiàn|conveniently^顺利|shùnlì|smooth^顺序|shùnxù|order^说法|shuōfǎ|way of saying^说明|shuōmíng|to explain; explanation^说明书|shuōmíngshū|instruction manual^硕士|shuòshì|master^死|sǐ|to die; dead^速度|sùdù|speed^塑料|sùliào|plastic^酸|suān|sour^酸奶|suānnǎi|yogurt^算|suàn|to calculate; considered^随便|suíbiàn|casual; whatever^随着|suízhe|along with^孙女|sūnnǚ|granddaughter^孙子|sūnzi|grandson^所有|suǒyǒu|all; to possess^台|tái|measure word for machines^抬|tái|to lift^抬头|táitóu|to raise one's head^态度|tàidu|attitude^弹|tán|to play^谈|tán|to talk^汤|tāng|soup^躺|tǎng|to lie down^趟|tàng|measure word for trips^讨论|tǎolùn|to discuss^讨厌|tǎoyàn|disgusting; to dislike^特点|tèdiǎn|characteristic^提|tí|to carry; to mention^提出|tíchū|to put forward^提到|tídào|to mention^提供|tígōng|to provide^提前|tíqián|to advance^提醒|tíxǐng|to remind^体检|tǐjiǎn|to undergo physical exam^体温|tǐwēn|body temperature^体重|tǐzhòng|body weight^填写|tiánxiě|to fill in^条件|tiáojiàn|condition^听力|tīnglì|listening ability^听众|tīngzhòng|audience^停|tíng|to stop^停车|tíngchē|to park^停车场|tíngchēchǎng|parking lot^停止|tíngzhǐ|to stop^通|tōng|to go through^通过|tōngguò|to pass through^通知|tōngzhī|to notify; notice^童年|tóngnián|childhood^同时|tóngshí|at the same time^同样|tóngyàng|same^桶|tǒng|bucket^痛|tòng|painful^头痛|tóutòng|headache^图|tú|picture; to plan^图片|túpiàn|picture^土|tǔ|earth; rustic^推|tuī|to push^推迟|tuīchí|to postpone^推出|tuīchū|to launch^脱|tuō|to take off^袜子|wàzi|socks^外出|wàichū|to go out^外套|wàitào|coat^完全|wánquán|complete; completely^晚安|wǎn'ān|good night^晚餐|wǎncān|dinner^网购|wǎnggòu|to shop online^往往|wǎngwǎng|often^网页|wǎngyè|webpage^网友|wǎngyǒu|netizen^网址|wǎngzhǐ|website URL^危险|wēixiǎn|dangerous; danger^为|wéi|to do; to serve as^味|wèi|taste^味道|wèidao|taste^卫生|wèishēng|hygiene^温度|wēndù|temperature^闻|wén|to smell^文件|wénjiàn|document^文章|wénzhāng|essay^文字|wénzì|writing^污染|wūrǎn|contaminated^无|wú|to lack^无法|wúfǎ|unable^无聊|wúliáo|boring^无论|wúlùn|no matter what^午餐|wǔcān|lunch^误会|wùhuì|to misunderstand^吸|xī|to suck^西部|xībù|western region^西红柿|xīhóngshì|tomato^吸引|xīyǐn|to attract^细|xì|thin; detailed^细心|xìxīn|careful^下降|xiàjiàng|to decline^鲜|xiān|fresh^鲜花|xiānhuā|fresh flower^咸|xián|salty^现金|xiànjīn|cash^羡慕|xiànmù|to envy^线上|xiànshàng|online^线下|xiànxià|offline^现有|xiànyǒu|existing^香|xiāng|fragrant^相比|xiāngbǐ|to compare with^相反|xiāngfǎn|opposite^相互|xiānghù|mutual^相同|xiāngtóng|same^详细|xiángxì|detailed^响|xiǎng|to make a sound; loud^想法|xiǎngfǎ|thought^项|xiàng|measure word for items^消息|xiāoxi|news^小吃|xiǎochī|snack^小伙子|xiǎohuǒzi|young man^小说|xiǎoshuō|novel^小组|xiǎozǔ|small group^效果|xiàoguǒ|effect^笑话|xiàohua|joke^血|xuè|blood^心|xīn|heart^辛苦|xīnkǔ|hard; to work hard^心情|xīnqíng|mood^信号|xìnhào|signal^信息|xìnxī|information^信心|xìnxīn|confidence^兴奋|xīngfèn|excited^星星|xīngxing|star^醒|xǐng|to wake up^性|xìng|nature; character^性别|xìngbié|gender^幸福|xìngfú|happiness; happy^性格|xìnggé|character^兄弟|xiōngdì|brothers^熊|xióng|bear^修|xiū|to repair^修理|xiūlǐ|to repair^许多|xǔduō|many^学费|xuéfèi|tuition fee^学院|xuéyuàn|college^压|yā|to press^压力|yālì|pressure^牙膏|yágāo|toothpaste^亚洲|Yàzhōu|Asia^烟|yān|cigarette^盐|yán|salt^严格|yángé|strict^研究|yánjiū|to research^研究生|yánjiūshēng|graduate student^严重|yánzhòng|serious^演|yǎn|to act^演唱|yǎnchàng|to sing^演出|yǎnchū|to perform^眼镜|yǎnjìng|eyeglasses^眼前|yǎnqián|before one's eyes^演员|yǎnyuán|actor^阳光|yángguāng|sunlight^养成|yǎngchéng|to develop^样子|yàngzi|appearance^邀请|yāoqǐng|to invite^要是|yàoshi|if^钥匙|yàoshi|key^也许|yěxǔ|maybe^夜|yè|night^夜晚|yèwǎn|night^叶子|yèzi|leaf^一切|yīqiè|everything^已|yǐ|already^以内|yǐnèi|within^意见|yìjiàn|opinion^一生|yìshēng|lifetime^艺术|yìshù|art^因此|yīncǐ|therefore^引起|yǐnqǐ|cause^印象|yìnxiàng|impression^赢|yíng|win^赢得|yíngdé|gain^应聘|yìngpìn|to apply for a job^勇敢|yǒnggǎn|brave^永远|yǒngyuǎn|forever^用来|yònglái|to be used for^用于|yòngyú|to be used for^优点|yōudiǎn|advantage^幽默|yōumò|humorous^优秀|yōuxiù|excellent^由|yóu|by, through^油|yóu|oil^尤其|yóuqí|especially^游玩|yóuwán|to play; to go sightseeing^由于|yóuyú|because of^友好|yǒuhǎo|friendly^友情|yǒuqíng|friendship^有趣|yǒuqù|interesting^有效|yǒuxiào|effective^友谊|yǒuyì|friendship^有着|yǒuzhe|to have^愉快|yúkuài|pleasant^于是|yúshì|therefore^与|yǔ|with; and^语法|yǔfǎ|grammar^预习|yùxí|to preview^原来|yuánlái|original; originally^原谅|yuánliàng|to forgive^原因|yuányīn|cause^远离|yuǎnlí|to stay away from^院长|yuànzhǎng|dean^院子|yuànzi|courtyard^约|yuē|to make an appointment; about^约会|yuēhuì|to date; date^月饼|yuèbǐng|mooncake^阅读|yuèdú|to read^月份|yuèfèn|month^云|yún|cloud^允许|yǔnxǔ|to permit^杂志|zázhì|magazine^再次|zàicì|once again^再说|zàishuō|to put off; besides^暂时|zànshí|temporary^暂停|zàntíng|to suspend^早餐|zǎocān|breakfast^早晨|zǎochen|morning^责任|zérèn|responsibility^增加|zēngjiā|to increase^增长|zēngzhǎng|to increase^招聘|zhāopìn|to recruit^着|zháo|to touch; to catch fire^着火|zháohuǒ|to catch fire^者|zhě|person who^真正|zhēnzhèng|true; truly^整|zhěng|whole^整个|zhěnggè|whole^整理|zhěnglǐ|to arrange^证|zhèng|certificate^正常|zhèngcháng|normal^正好|zhènghǎo|exactly right^证件|zhèngjiàn|ID card; credentials^证明|zhèngmíng|to prove; proof^正确|zhèngquè|correct^正式|zhèngshì|formal^之|zhī|auxiliary word^支持|zhīchí|to support^支付|zhīfù|to pay^之后|zhīhòu|after^之间|zhījiān|between^之前|zhīqián|before^知识|zhīshi|knowledge^之中|zhīzhōng|among^值|zhí|to be worth; valuable^值得|zhíde|to be worth^直接|zhíjiē|direct^植物|zhíwù|plant^职业|zhíyè|occupation^指|zhǐ|to point to^指出|zhǐchū|to point out^只好|zhǐhǎo|have to^纸巾|zhǐjīn|tissue paper^质量|zhìliàng|quality^至少|zhìshǎo|at least^中餐|zhōngcān|Chinese food^中年|zhōngnián|middle age^种|zhòng|to plant^重|zhòng|weight; heavy^重点|zhòngdiǎn|key point^重视|zhòngshì|to pay attention to^周围|zhōuwéi|around^主意|zhǔyì|idea^祝|zhù|to wish^祝贺|zhùhè|to congratulate^著名|zhùmíng|famous^专门|zhuānmén|specially; special^专业|zhuānyè|specialty; professional^转|zhuǎn|to turn; to transfer^转发|zhuǎnfā|to forward^转机|zhuǎnjī|to transfer (flight)^赚|zhuàn|to earn^装|zhuāng|to load; to pretend^准|zhǔn|accurate^准确|zhǔnquè|accurate^准时|zhǔnshí|on time^资料|zīliào|materials^仔细|zǐxì|careful^自|zì|from; oneself^自然|zìrán|nature; natural^自习|zìxí|to study on one's own^自信|zìxìn|confident^自学|zìxué|to teach oneself^总结|zǒngjié|to summarize; summary^租|zū|to rent^组|zǔ|group; to organize^最终|zuìzhōng|final^尊重|zūnzhòng|to respect^左右|zuǒyòu|about; left and right^座|zuò|seat; measure word for seats^做法|zuòfǎ|way of doing things^作家|zuòjiā|writer^做梦|zuòmèng|to dream^作品|zuòpǐn|work^作为|zuòwéi|to act as; as^座位|zuòwèi|seat^作文|zuòwén|composition^作用|zuòyòng|function^作者|zuòzhě|author";
+        // !!! PLEASE PASTE YOUR ENTIRE `rawVocab` STRING HERE !!!
+          const rawVocab = "爱|ài|to love^八|bā|eight^爸爸|bàba|dad^吧|ba|particle indicating suggestion^白天|báitiān|daytime^百|bǎi|hundred^半|bàn|half^包子|bāozi|steamed stuffed bun^杯子|bēizi|cup, glass^本|běn|measure word for books^边|biān|side; direction^病|bìng|illness, disease^不|bù|not, no^不客气|bú kèqi|you're welcome^不要|búyào|don't, not want^菜|cài|vegetable, dish^茶|chá|tea^唱|chàng|to sing^超市|chāoshì|supermarket^车|chē|vehicle, car^吃|chī|to eat^出租车|chūzūchē|taxi^穿|chuān|to wear^打电话|dǎ diànhuà|to make a phone call^大|dà|big^大家|dàjiā|everyone^大学|dàxué|university^大学生|dàxuéshēng|university student^到|dào|to arrive^的|de|possessive or modifying particle^第|dì|prefix for ordinal numbers^弟弟|dìdi|younger brother^点|diǎn|measure word; point, dot^店|diàn|shop, store^电话|diànhuà|telephone^电脑|diànnǎo|computer^电视|diànshì|television^电影|diànyǐng|movie, film^电影院|diànyǐngyuàn|cinema^东西|dōngxi|thing, object^都|dōu|all, both^读|dú|to read^读书|dúshū|to read a book^对|duì|correct, right^对不起|duìbuqǐ|sorry^多|duō|many, much^多少|duōshao|how many, how much^儿子|érzi|son^二|èr|two^饭|fàn|cooked rice, meal^饭店|fàndiàn|restaurant^房间|fángjiān|room^非常|fēicháng|very, extremely^飞机|fēijī|airplane^分|fēn|minute; to divide^分钟|fēnzhōng|minute^高兴|gāoxìng|happy, glad^歌|gē|song^哥哥|gēge|older brother^个|gè|measure word for general objects^给|gěi|to give^公司|gōngsī|company^工作|gōngzuò|work^狗|gǒu|dog^贵|guì|expensive^国|guó|country^还|hái|still, also; quite^孩子|háizi|child^汉语|Hànyǔ|Chinese language^汉字|Hànzì|Chinese character^好|hǎo|good; well^好吃|hǎochī|delicious, tasty^好看|hǎokàn|good-looking^好听|hǎotīng|pleasant to listen to^好玩儿|hǎowánr|fun, amusing^号|hào|number; measure word^喝|hē|to drink^和|hé|and, with^很|hěn|very^后|hòu|behind, later^回|huí|to return^会|huì|can, to be able to^火车|huǒchē|train^鸡蛋|jīdàn|egg^几|jǐ|how many, a few^家|jiā|home, family^家人|jiārén|family member^见|jiàn|to see^件|jiàn|measure word for items^饺子|jiǎozi|dumpling^叫|jiào|to be called^姐姐|jiějie|older sister^今年|jīnnián|this year^今天|jīntiān|today^九|jiǔ|nine^觉得|juéde|to feel, to think^开|kāi|to open^开车|kāichē|to drive^看|kàn|to see, to look^看病|kànbìng|to see a doctor^看见|kànjiàn|to see^可以|kěyǐ|can, may^课|kè|class, lesson^口|kǒu|mouth; measure word^块|kuài|measure word for pieces, money^来|lái|to come^老师|lǎoshī|teacher^了|le|particle indicating completed action^冷|lěng|cold^里|lǐ|inside, in, mile^两|liǎng|two^零|líng|zero^六|liù|six^妈妈|māma|mom^吗|ma|question particle^买|mǎi|to buy^卖|mài|to sell^忙|máng|busy^猫|māo|cat^没关系|méi guānxi|never mind, it's okay^没事|méishì|have nothing to do^没有|méiyǒu|to not have^妹妹|mèimei|younger sister^们|men|plural suffix^米饭|mǐfàn|cooked rice^面包|miànbāo|bread^面条儿|miàntiáor|noodles^明年|míngnián|next year^明天|míngtiān|tomorrow^名字|míngzi|name^哪|nǎ|which^哪个|nǎge|which one^哪里|nǎlǐ|where^哪儿|nǎr|where^哪些|nǎxiē|which ones^那|nà|that^那边|nàbiān|over there^那个|nàge|that one^那里|nàlǐ|there^那儿|nàr|there^那些|nàxiē|those^男|nán|male^男朋友|nánpéngyou|boyfriend^呢|ne|question or continuation particle^能|néng|can, be able to^你|nǐ|you^你好|nǐ hǎo|hello^你们|nǐmen|you plural^年|nián|year^您|nín|you (polite)^牛奶|niúnǎi|milk^女|nǚ|female^女儿|nǚ'ér|daughter^女朋友|nǚpéngyou|girlfriend^女士|nǚshì|lady, Ms.^朋友|péngyou|friend^便宜|piányi|cheap^漂亮|piàoliang|beautiful^苹果|píngguǒ|apple^七|qī|seven^起床|qǐchuáng|to get up^千|qiān|thousand^前|qián|front, before^钱|qián|money^请|qǐng|please^请问|qǐngwèn|may I ask^去|qù|to go^去年|qùnián|last year^热|rè|hot^人|rén|person^认识|rènshi|to know, to recognize^日|rì|measure word for days^三|sān|three^商店|shāngdiàn|store, shop^上|shàng|up, above; to go up^上班|shàngbān|to go to work^上课|shàngkè|to attend class^上午|shàngwǔ|morning^上学|shàngxué|to go to school^少|shǎo|few, little^谁|shéi|who^什么|shénme|what^生病|shēngbìng|to get sick^十|shí|ten^时候|shíhou|moment, time^时间|shíjiān|time^事|shì|matter, thing^是|shì|to be^手机|shǒujī|cell phone^书|shū|book^书店|shūdiàn|bookstore^水|shuǐ|water^水果|shuǐguǒ|fruit^睡|shuì|to sleep^睡觉|shuìjiào|to sleep^说|shuō|to speak, to say^说话|shuōhuà|to talk^四|sì|four^岁|suì|measure word for age^他|tā|he, him^它|tā|it^她|tā|she^他们|tāmen|they^它们|tāmen|they^她们|tāmen|they^太|tài|too, extremely^天|tiān|day^天气|tiānqì|weather^听|tīng|to listen^听见|tīngjiàn|to hear^同学|tóngxué|classmate^外|wài|outside, exterior^外边|wàibian|outside^玩|wán|to play^晚|wǎn|late^晚饭|wǎnfàn|dinner^晚上|wǎnshang|evening^喂|wèi|hello (used when answering the phone)^问|wèn|to ask^问题|wèntí|question^我|wǒ|I^我们|wǒmen|we^五|wǔ|five^午饭|wǔfàn|lunch^喜欢|xǐhuan|to like^下|xià|down, below^下雨|xià yǔ|to rain^下班|xiàbān|to get off work^下课|xiàkè|to finish class^下午|xiàwǔ|afternoon^先生|xiānsheng|Mr., husband^现在|xiànzài|now^想|xiǎng|to think; to want^小|xiǎo|small^小朋友|xiǎopéngyǒu|little friend, child^小时|xiǎoshí|hour^小学|xiǎoxué|primary school^小学生|xiǎoxuéshēng|primary school student^些|xiē|measure word for an indefinite amount^写|xiě|to write^谢谢|xièxie|to thank^新|xīn|new^星期|xīngqī|week^星期日|xīngqīrì|Sunday^星期天|xīngqītiān|Sunday^休息|xiūxi|to rest^学|xué|to learn, to study^学生|xuéshēng|student^学习|xuéxí|to study^学校|xuéxiào|school^雪|xuě|snow^要|yào|to want, to need^也|yě|also, too^一|yī|one^衣服|yīfu|clothes^医生|yīshēng|doctor^医院|yīyuàn|hospital^一半|yíbàn|half^一下|yíxià|once, a little^椅子|yǐzi|chair^一点儿|yìdiǎnr|a little, a bit^一些|yìxiē|some, a few^有|yǒu|to have, to exist^有的|yǒude|some of them^有点儿|yǒudiǎnr|a little, slightly^有些|yǒuxiē|some, some of^雨|yǔ|rain^元|yuán|yuan^月|yuè|month; moon^再|zài|again, then^在|zài|to be at; at^再见|zàijiàn|goodbye^早|zǎo|early^早饭|zǎofàn|breakfast^早上|zǎoshang|morning^怎么|zěnme|how^怎么样|zěnmeyàng|how about^找|zhǎo|to look for^这|zhè|this^这边|zhèbiān|here^这个|zhège|this one^这里|zhèlǐ|here^这儿|zhèr|here^这些|zhèxiē|these^真|zhēn|really^正在|zhèngzài|in the process of^只|zhī|measure word for animals^知道|zhīdào|to know^中国|Zhōngguó|China^中文|Zhōngwén|Chinese language^中午|zhōngwǔ|noon^中学|zhōngxué|middle school^中学生|zhōngxuéshēng|middle school student^住|zhù|to live, to reside^桌子|zhuōzi|table, desk^字|zì|character, script^昨天|zuótiān|yesterday^坐|zuò|to sit^做|zuò|to do, to make^做饭|zuò fàn|to cook^啊|a|ah, oh^爱好|àihào|to like; hobby^白色|báisè|white^班|bān|class, team^帮|bāng|to help^帮忙|bāngmáng|to help^包|bāo|to wrap, to pack; bag^本子|běnzi|notebook^比|bǐ|to compare; than^笔|bǐ|pen^别|bié|don't^不错|búcuò|not bad^不好意思|bù hǎoyìsi|sorry, embarrassed^长|cháng|long^车站|chēzhàn|station^出|chū|to go out^出国|chūguó|to go abroad^出来|chūlái|to come out^出门|chūmén|to go out^出去|chūqù|to go out^床|chuáng|bed^词|cí|word, term^次|cì|measure word of time or occasion^从|cóng|from^从小|cóngxiǎo|from childhood^错|cuò|wrong^打|dǎ|to hit, to play^打车|dǎchē|to take a taxi^打开|dǎkāi|to open^但|dàn|but^但是|dànshì|but^得|de|particle indicating degree or manner^地|de|particle modifying an adjective into an adverb^等|děng|to wait^地铁|dìtiě|subway^点|diǎn|to light; point^懂|dǒng|to understand^动|dòng|to move^饭馆|fànguǎn|restaurant^飞|fēi|to fly^高|gāo|tall^高中|gāozhōng|high school^告诉|gàosu|to tell^个子|gèzi|height^跟|gēn|with; and^公交车|gōngjiāochē|bus^过|guò|to pass^过来|guòlái|to come over^过年|guònián|to celebrate the New Year^过去|guòqù|to go over^过|guo|particle indicating past experience^还是|háishi|still; or^黑色|hēisè|black^红茶|hóngchá|black tea^红色|hóngsè|red^后面|hòumiàn|behind^花|huā|to spend^花|huā|flower^画|huà|to draw; painting^坏|huài|bad^回来|huílái|to come back^回去|huíqù|to go back^机场|jīchǎng|airport^机票|jīpiào|airplane ticket^记得|jìde|to remember^间|jiān|measure word for rooms^教|jiāo|to teach^教室|jiàoshì|classroom^介绍|jièshào|to introduce^进|jìn|to enter^近|jìn|near^进来|jìnlái|to come in^进去|jìnqù|to go in^经常|jīngcháng|often^酒店|jiǔdiàn|hotel^就|jiù|just, then^咖啡|kāfēi|coffee^开始|kāishǐ|to start^开学|kāixué|school starts^考|kǎo|to test^考试|kǎoshì|to take an exam; exam^可能|kěnéng|possible^裤子|kùzi|pants^快|kuài|fast^快乐|kuàilè|happy^快要|kuàiyào|soon^篮球|lánqiú|basketball^累|lèi|tired^离|lí|to leave^里面|lǐmiàn|inside^楼|lóu|building^路|lù|road^路上|lùshang|on the road^旅游|lǚyóu|to travel^绿茶|lǜchá|green tea^绿色|lǜsè|green^慢|màn|slow^没意思|méi yìsi|boring^每|měi|every^门|mén|door^门口|ménkǒu|doorway^门票|ménpiào|ticket^面|miàn|suffix^名|míng|name^拿|ná|to take^那么|nàme|so^那样|nàyàng|like that^奶茶|nǎichá|milk tea^奶奶|nǎinai|grandmother^男孩儿|nánháir|boy^鸟|niǎo|bird^女孩儿|nǚháir|girl^旁边|pángbiān|side^跑|pǎo|to run^跑步|pǎobù|to run^票|piào|ticket^妻子|qīzi|wife^起来|qǐlái|to get up^前面|qiánmiàn|front^晴|qíng|sunny^球|qiú|ball^让|ràng|to let^肉|ròu|meat^商场|shāngchǎng|shopping mall^上来|shànglái|to come up^上面|shàngmiàn|above^上去|shàngqù|to go up^上网|shàngwǎng|to go online^身体|shēntǐ|body^生日|shēngrì|birthday^时|shí|time^事情|shìqing|matter^手|shǒu|hand^手表|shǒubiǎo|watch^书包|shūbāo|backpack^舒服|shūfu|comfortable^送|sòng|to give^虽然|suīrán|although^所以|suǒyǐ|so^疼|téng|painful^踢|tī|to kick^题|tí|question^条|tiáo|measure word^跳舞|tiàowǔ|to dance^头|tóu|head^外国|wàiguó|foreign country^外面|wàimiàn|outside^完|wán|to finish^万|wàn|ten thousand^往|wǎng|toward^网上|wǎngshàng|online^忘|wàng|to forget^位|wèi|measure word for people^为什么|wèi shénme|why^希望|xīwàng|to hope^洗|xǐ|to wash^洗手间|xǐshǒujiān|restroom^下来|xiàlái|to come down^下面|xiàmiàn|below^下去|xiàqù|to go down^小孩儿|xiǎoháir|child^小时候|xiǎoshíhou|childhood^笑|xiào|to laugh^姓|xìng|surname^姓名|xìngmíng|full name^颜色|yánsè|color^眼睛|yǎnjìng|eye^药|yào|medicine^药店|yàodiàn|pharmacy^爷爷|yéye|grandfather^一会儿|yíhuìr|a while^已经|yǐjīng|already^一起|yìqǐ|together^意思|yìsi|meaning^阴|yīn|cloudy^因为|yīnwèi|because^游|yóu|to swim^游泳|yóuyǒng|to swim^有意思|yǒu yìsi|interesting^有时|yǒushí|sometimes^右|yòu|right^右边|yòubian|right side^鱼|yú|fish^远|yuǎn|far^运动|yùndòng|sports^站|zhàn|station^丈夫|zhàngfu|husband^这么|zhème|so^这样|zhèyàng|like this^着|zhe|particle indicating ongoing action or state^正|zhèng|just^周|zhōu|week^准备|zhǔnbèi|to prepare^自己|zìjǐ|oneself^走|zǒu|to walk^走路|zǒulù|to walk^足球|zúqiú|soccer^最|zuì|most^左|zuǒ|left^左边|zuǒbian|left side^阿姨|āyí|aunt^矮|ǎi|short^爱人|àiren|spouse^安静|ānjìng|quiet^安全|ānquán|safe^把|bǎ|measure word for objects with handles^搬|bān|to move^班级|bānjí|class^搬家|bānjiā|to move house^办|bàn|to do^办法|bànfǎ|way^办公室|bàngōngshì|office^半天|bàntiān|half a day^帮助|bāngzhù|help^饱|bǎo|full^报纸|bàozhǐ|newspaper^北|běi|north^北方|běifāng|north^被|bèi|by^笔记|bǐjì|notes^比较|bǐjiào|to compare; relatively^笔记本|bǐjìběn|notebook^比如|bǐrú|for example^比赛|bǐsài|to compete; game^必须|bìxū|must^变|biàn|to change^遍|biàn|measure word for actions^变成|biànchéng|to become^变化|biànhuà|to change^表演|biǎoyǎn|to perform^别的|biéde|other^别人|biérén|other people^宾馆|bīnguǎn|hotel^冰|bīng|ice^冰激凌|bīngjīlíng|ice cream^冰箱|bīngxiāng|refrigerator^病人|bìngrén|patient^不但|búdàn|not only^不见|bújiàn|to disappear^不用|búyòng|need not^不同|bù tóng|different^不久|bùjiǔ|soon^不行|bùxíng|not allowed^才|cái|just^菜单|càidān|menu^参加|cānjiā|to join^草|cǎo|grass^草地|cǎodì|grassland^层|céng|layer^查|chá|to check^差|chà|bad; to lack^差不多|chàbuduō|almost^尝|cháng|to taste^常|cháng|often^常见|cháng jiàn|common^常用|cháng yòng|commonly used^常常|chángcháng|often^衬衫|chènshān|shirt^成绩|chéngjì|score^城市|chéngshì|city^迟到|chídào|to be late^出发|chūfā|to set out^出生|chūshēng|to be born^出院|chūyuàn|to be discharged from hospital^初中|chūzhōng|junior high school^除了|chúle|except^船|chuán|boat^春天|chūntiān|spring^词典|cídiǎn|dictionary^聪明|cōngmíng|smart^打扫|dǎsǎo|to clean^打算|dǎsuàn|to plan^大概|dàgài|general; probably^大人|dàren|adult^大小|dàxiǎo|size^大熊猫|dàxióngmāo|giant panda^大衣|dàyī|coat^带|dài|to bring^担心|dānxīn|to worry^蛋糕|dàngāo|cake^当然|dāngrán|of course^到处|dàochù|everywhere^得|dé|to get^得到|dédào|to get^得分|défēn|to score^的话|dehuà|if...^得|děi|must^灯|dēng|lamp^地|dì|ground^地点|dìdiǎn|place^地方|dìfang|place^地图|dìtú|map^电|diàn|electricity^电梯|diàntī|elevator^电子书|diànzǐshū|e-book^丢|diū|to lose^东|dōng|east^东北|dōngběi|northeast^东方|dōngfāng|east^东南|dōngnán|southeast^冬天|dōngtiān|winter^懂得|dǒngde|to understand^动物|dòngwù|animal^动物园|dòngwùyuán|zoo^短|duǎn|short^短裤|duǎnkù|shorts^段|duàn|segment^锻炼|duànliàn|to exercise^对话|duìhuà|dialogue^饿|è|hungry^而且|érqiě|and^耳朵|ěrduo|ear^耳机|ěrjī|earphone^发|fā|to send^发烧|fāshāo|to have a fever^发生|fāshēng|to happen^发现|fāxiàn|to find^发展|fāzhǎn|to develop^方便|fāngbiàn|convenient^方便面|fāngbiànmiàn|instant noodles^方法|fāngfǎ|method^方向|fāngxiàng|direction^房子|fángzi|house^放|fàng|to put^放假|fàngjià|to have a holiday^放心|fàngxīn|to relax^放学|fàngxué|school is over^分开|fēnkāi|to separate^风|fēng|wind^封|fēng|measure word for letters^夫妻|fūqī|husband and wife^服务|fúwù|to serve^附近|fùjìn|nearby^复习|fùxí|to review^该|gāi|should^干净|gānjìng|clean^感兴趣|gǎn xìngqù|to be interested in^感到|gǎndào|to feel^感冒|gǎnmào|cold^干|gàn|to do^刚|gāng|just^刚才|gāngcái|just now^刚刚|gānggāng|just now^高铁|gāotiě|high-speed rail^根据|gēnjù|according to^更|gèng|more^公斤|gōngjīn|kilogram^公园|gōngyuán|park^工作日|gōngzuòrì|workday^故事|gùshi|story^刮|guā|to scrape^关|guān|to close^关机|guānjī|to turn off device^关系|guānxì|relationship^关心|guānxīn|to care about^关于|guānyú|about^关注|guānzhù|to pay attention to^国家|guójiā|country^过节|guòjié|to celebrate a festival^过去|guòqù|past^海|hǎi|sea^害怕|hàipà|to be afraid^好多|hǎoduō|many^好久|hǎojiǔ|a long time^好像|hǎoxiàng|to seem^号码|hàomǎ|number^河|hé|river^合适|héshì|suitable^黑板|hēibǎn|blackboard^红绿灯|hóng-lǜdēng|traffic light^后来|hòulái|later^后年|hòunián|the year after next^后天|hòutiān|the day after tomorrow^护照|hùzhào|passport^花园|huāyuán|garden^画家|huàjiā|painter^欢迎|huānyíng|to welcome^还|huán|to return^环境|huánjìng|environment^换|huàn|to exchange^黄色|huángsè|yellow^回答|huídá|to answer^会|huì|meeting^会议|huìyì|meeting^或|huò|or^或者|huòzhě|or^鸡|jī|chicken^几乎|jīhū|almost^机会|jīhuì|opportunity^极|jí|extremely^急|jí|urgent^记|jì|to remember^季|jì|season^季节|jìjié|season^加|jiā|to add^假期|jiàqī|vacation^坚持|jiānchí|to persist^检查|jiǎnchá|to check^简单|jiǎndān|simple^检票|jiǎnpiào|ticket checking^健康|jiànkāng|healthy^见面|jiànmiàn|to meet^讲|jiǎng|to speak^角|jiǎo|measure word for fractions^脚|jiǎo|foot^接|jiē|to pick up^街|jiē|street^节|jié|measure word for segments^结婚|jiéhūn|to marry^节目|jiémù|program^节日|jiérì|festival^结束|jiéshù|to end^解决|jiějué|to solve^姐妹|jiěmèi|sister^借|jiè|to borrow^斤|jīn|catty^经过|jīngguò|to pass^经理|jīnglǐ|manager^久|jiǔ|long^酒|jiǔ|alcohol^旧|jiù|old^句|jù|measure word of sentence^句子|jùzi|sentence^决定|juédìng|to decide^卡|kǎ|card^开花|kāihuā|to bloom^开会|kāihuì|to have a meeting^开机|kāijī|to turn on device^开心|kāixīn|happy^看来|kànlái|it seems^可|kě|but^渴|kě|thirsty^可爱|kě'ài|lovely^可是|kěshì|but^刻|kè|quarter^课本|kèběn|textbook^客人|kèrén|guest^课文|kèwén|text^空调|kōngtiáo|air conditioner^哭|kū|to cry^筷子|kuàizi|chopsticks^矿泉水|kuàngquánshuǐ|mineral water^来自|láizì|to come from^蓝|lán|blue^老|lǎo|old^老人|lǎorén|elderly person^离开|líkāi|to leave^礼物|lǐwù|gift^历史|lìshǐ|history^脸|liǎn|face^练|liàn|to practice^练习|liànxí|to practice; exercise^凉快|liángkuai|cool^辆|liàng|measure word for vehicles^聊|liáo|to chat^聊天儿|liáotiānr|to chat^了解|liǎojiě|to understand^邻居|línjū|neighbor^留学|liúxué|to study abroad^留学生|liúxuéshēng|overseas student^楼梯|lóutī|stairs^路边|lùbiān|roadside^路口|lùkǒu|intersection^马|mǎ|horse^马路|mǎlù|road^马上|mǎshàng|immediately^满意|mǎnyì|satisfied^毛|máo|measure word for money^米|mǐ|meter^面前|miànqián|in front of^明白|míngbai|to understand; clear^名单|míngdān|name list^名人|míngrén|famous person^南|nán|south^难|nán|difficult^南方|nánfāng|south^难过|nánguò|sad^难看|nánkàn|ugly^男人|nánrén|man^男生|nánshēng|boy student^难题|nántí|difficult problem^难听|nántīng|unpleasant to hear^年级|niánjí|grade^年轻|niánqīng|young^牛|niú|cow^努力|nǔlì|to work hard^女人|nǚrén|woman^女生|nǚshēng|girl student^爬|pá|to climb^怕|pà|to fear^拍照|pāizhào|to take a photo^盘子|pánzi|plate^胖|pàng|fat^啤酒|píjiǔ|beer^平时|píngshí|usually^瓶子|píngzi|bottle^骑|qí|to ride^奇怪|qíguài|strange^其实|qíshí|actually^其他|qítā|other^起|qǐ|to rise^起飞|qǐfēi|to take off^汽车|qìchē|car^铅笔|qiānbǐ|pencil^前年|qiánnián|the year before last^前天|qiántiān|the day before yesterday^清楚|qīngchu|clear^请假|qǐngjià|to ask for leave^请客|qǐngkè|to invite guests^秋天|qiūtiān|autumn^球场|qiúchǎng|sports field^裙子|qúnzi|skirt^然后|ránhòu|then^热情|rèqíng|enthusiastic^认得|rènde|to recognize^认为|rènwéi|to think^认真|rènzhēn|serious^容易|róngyì|easy^如果|rúguǒ|if^伞|sǎn|umbrella^扫|sǎo|to sweep^沙发|shāfā|sofa^山|shān|mountain^上衣|shàngyī|jacket^勺子|sháozi|spoon^身边|shēnbiān|by one's side^身高|shēngāo|height^声|shēng|sound^生活|shēnghuó|life^生气|shēngqì|to get angry^声音|shēngyīn|sound^市|shì|city^试|shì|to try^室|shì|room^世界|shìjiè|world^收|shōu|to receive^收到|shōudào|to receive^受|shòu|to receive^瘦|shòu|thin^受到|shòudào|to receive^叔叔|shūshu|uncle^树|shù|tree^数学|shùxué|mathematics^刷|shuā|to brush^双|shuāng|pair^水平|shuǐpíng|level^司机|sījī|driver^四季|sìjì|four seasons^太阳|tàiyáng|sun^糖|táng|candy^特别|tèbié|special^提高|tígāo|to raise^体育|tǐyù|physical education^体育馆|tǐyùguǎn|gymnasium^甜|tián|sweet^跳|tiào|to jump^听说|tīngshuō|to hear said^挺|tǐng|quite^同事|tóngshì|colleague^同意|tóngyì|to agree^头发|tóufa|hair^突然|tūrán|sudden^图书馆|túshūguǎn|library^腿|tuǐ|leg^外地|wàidì|other place^外卖|wàimài|takeaway^外语|wàiyǔ|foreign language^完成|wánchéng|to complete^碗|wǎn|bowl^晚点|wǎndiǎn|to be late^晚会|wǎnhuì|evening party^网球|wǎngqiú|tennis^网站|wǎngzhàn|website^忘记|wàngjì|to forget^为|wèi|for^为了|wèile|in order to^卫生间|wèishēngjiān|bathroom^文化|wénhuà|culture^屋子|wūzi|room^西|xī|west^西北|xīběi|northwest^西方|xīfāng|west^西瓜|xīguā|watermelon^西南|xīnán|southwest^习惯|xíguàn|habit^喜爱|xǐ'ài|to like^洗衣机|xǐyījī|washing machine^洗澡|xǐzǎo|to take a bath^夏天|xiàtiān|summer^先|xiān|first^香蕉|xiāngjiāo|banana^相信|xiāngxìn|to believe^箱子|xiāngzi|box^向|xiàng|toward^像|xiàng|to resemble^相机|xiàngjī|camera^小区|xiǎoqū|residential community^小心|xiǎoxīn|to be careful^校园|xiàoyuán|campus^校长|xiàozhǎng|principal^鞋|xié|shoe^心里|xīnlǐ|heart^新年|xīnnián|New Year^新闻|xīnwén|news^新鲜|xīnxiān|fresh^信|xìn|letter^信用卡|xìnyòngkǎ|credit card^行|xíng|okay^行李|xíngli|luggage^兴趣|xìngqù|interest^休假|xiūjià|to take a holiday^需要|xūyào|to need^选|xuǎn|to choose^选择|xuǎnzé|to choose^学期|xuéqī|semester^牙|yá|tooth^牙刷|yáshuā|toothbrush^羊|yáng|sheep^养|yǎng|to raise^要求|yāoqiú|to demand^页|yè|page^一定|yídìng|certain^一共|yígòng|altogether^一块儿|yíkuàir|together^一样|yíyàng|same^以后|yǐhòu|after^以前|yǐqián|before^以上|yǐshàng|above^以外|yǐwài|except^以为|yǐwéi|to think^以下|yǐxià|below^一般|yìbān|general^一边|yìbiān|at the same time^一直|yìzhí|always^音乐|yīnyuè|music^银行|yínháng|bank^银行卡|yínhángkǎ|bank card^饮料|yǐnliào|beverage^应该|yīnggāi|should^影响|yǐngxiǎng|to affect^用|yòng|to use^邮件|yóujiàn|mail^游客|yóukè|tourist^游戏|yóuxì|game^邮箱|yóuxiāng|mailbox^有关|yǒuguān|concerning^有名|yǒumíng|famous^有用|yǒuyòng|useful^又|yòu|again^羽毛球|yǔmáoqiú|badminton^语言|yǔyán|language^雨衣|yǔyī|raincoat^遇到|yùdào|to encounter^遇见|yùjiàn|to meet^园|yuán|garden^员|yuán|suffix for person^愿意|yuànyì|willing^越|yuè|more^月亮|yuèliang|moon^运动会|yùndònghuì|sports meet^运动员|yùndòngyuán|athlete^咱们|zánmen|we^脏|zāng|dirty^怎么办|zěnme bàn|what to do^怎样|zěnyàng|how^站|zhàn|station^张|zhāng|measure word^长|zhǎng|to grow^着急|zháojí|anxious^照|zhào|to shine^照顾|zhàogù|to take care of^照片|zhàopiàn|photo^照相|zhàoxiàng|to take a picture^直到|zhídào|until^只|zhǐ|only^纸|zhǐ|paper^只能|zhǐ néng|can only^只是|zhǐshì|only^只要|zhǐyào|as long as^只有|zhǐyǒu|only if^中|zhōng|middle^中间|zhōngjiān|middle^终于|zhōngyú|finally^种|zhǒng|kind^重要|zhòngyào|important^周末|zhōumò|weekend^主要|zhǔyào|main^注意|zhùyì|to pay attention to^住院|zhùyuàn|to be hospitalized^字典|zìdiǎn|dictionary^自行车|zìxíngchē|bicycle^子|zi|noun suffix^总|zǒng|always^总是|zǒngshì|always^嘴|zuǐ|mouth^最好|zuìhǎo|best^最后|zuìhòu|last^最近|zuìjìn|recently^做客|zuòkè|to be a guest^作业|zuòyè|homework^啊|a|ah, oh^爱情|àiqíng|love^爱心|àixīn|compassion, caring^安检|ānjiǎn|security check^安排|ānpái|to arrange^按|àn|to press; according to^按时|ànshí|on time^按照|ànzhào|according to^白酒|báijiǔ|liquor^办公|bàngōng|to handle official business^办理|bànlǐ|to handle^办事|bànshì|to handle matters^棒|bàng|great; stick^保护|bǎohù|to protect^保证|bǎozhèng|to guarantee; guarantee^抱|bào|to hold, embrace^报考|bàokǎo|to apply for an exam^报名|bàomíng|to sign up^抱歉|bàoqiàn|sorry^背|bēi|to carry on the back^背包|bēibāo|backpack^北部|běibù|northern part^倍|bèi|times, -fold^本科|běnkē|undergraduate program^本来|běnlái|original; originally^笨|bèn|stupid^鼻子|bízi|nose^笔试|bǐshì|written test^毕业|bìyè|to graduate^毕业生|bìyèshēng|graduate^便于|biànyú|to be convenient for^标准|biāozhǔn|standard^表|biǎo|watch, form; to express^表格|biǎogé|form^表示|biǎoshì|to express^表现|biǎoxiàn|to show, perform^表扬|biǎoyáng|to praise^饼干|bǐnggān|biscuit^并|bìng|to combine; actually; and^并且|bìngqiě|and, moreover^播放|bōfàng|to broadcast^博士|bóshì|doctor^不必|búbì|need not^不便|búbiàn|inconvenient^不断|búduàn|continuous^不够|búgòu|not enough^不过|búguò|but^不论|búlùn|no matter^步|bù|step^部|bù|department; measure word^不得不|bùdébù|have to^部分|bùfen|part^不管|bùguǎn|no matter^不光|bùguāng|not only^不仅|bùjǐn|not only^不满|bùmǎn|dissatisfied^部门|bùmén|department^不如|bùrú|not as good as^擦|cā|to wipe^猜|cāi|to guess^材料|cáiliào|material^参观|cānguān|to visit^参赛|cānsài|to enter a competition^餐厅|cāntīng|restaurant^操场|cāochǎng|playground^厕所|cèsuǒ|toilet^查看|chákàn|to check^茶叶|cháyè|tea leaf^查找|cházhǎo|to search for^差点儿|chàdiǎnr|almost^产生|chǎnshēng|to produce^厂|chǎng|factory^场|chǎng|measure word for events^超过|chāoguò|to exceed^车速|chēsù|vehicle speed^车位|chēwèi|parking space^城|chéng|city^乘|chéng|to ride, multiply^成功|chénggōng|to succeed; successful^乘客|chéngkè|passenger^诚实|chéngshí|honest^成为|chéngwéi|to become^乘坐|chéngzuò|to ride^吃惊|chījīng|to be startled^迟|chí|late^重|chóng|again^重新|chóngxīn|again^出差|chūchāi|to go on a business trip^出口|chūkǒu|exit; to export^出现|chūxiàn|to appear^出行|chūxíng|to travel^出租|chūzū|to rent out^厨房|chúfáng|kitchen^厨师|chúshī|chef^窗|chuāng|window^窗户|chuānghu|window^吹|chuī|to blow^词语|cíyǔ|word, phrase^此|cǐ|this^此次|cǐcì|this time^此外|cǐwài|besides^从此|cóngcǐ|from then on^从来|cónglái|always^从中|cóngzhōng|from among^粗|cū|coarse^粗心|cūxīn|careless^村|cūn|village^存|cún|to store^错过|cuòguò|to miss^错误|cuòwù|wrong; mistake^答应|dāying|to agree^答|dá|to answer^答案|dá'àn|answer^达到|dádào|to reach^打招呼|dǎ zhāohu|to greet^打败|dǎbài|to defeat^打工|dǎgōng|to work a temporary job^打扰|dǎrǎo|to disturb^打印|dǎyìn|to print^打印机|dǎyìnjī|printer^打折|dǎzhé|to give a discount^打针|dǎzhēn|to get an injection^大巴|dàbā|large bus^大大|dàdà|greatly^大夫|dàifu|doctor^大量|dàliàng|large quantity^大赛|dàsài|major competition^大厅|dàtīng|hall^大约|dàyuē|approximately^大自然|dàzìrán|nature^待|dāi|to stay^戴|dài|to wear^袋子|dàizi|bag^单位|dānwèi|unit^当|dāng|to serve as; at the time of^当时|dāngshí|at that time^刀|dāo|knife^导游|dǎoyóu|tour guide^倒|dào|to fall; however^道|dào|path; measure word^到底|dàodǐ|finally^到来|dàolái|to arrive^道路|dàolù|road^道歉|dàoqiàn|to apologize^得意|déyì|proud^登机|dēngjī|to board a plane^等|děng|and so on; class^等到|děngdào|until^低|dī|low; to lower^低价|dījià|low price^低温|dīwēn|low temperature^低于|dīyú|to be lower than^底|dǐ|bottom^底下|dǐxia|below^地球|dìqiú|earth^地址|dìzhǐ|address^点名|diǎnmíng|to call the roll^点头|diǎntóu|to nod^电动车|diàndòngchē|electric vehicle^电视剧|diànshìjù|TV drama^掉|diào|to fall^调查|diàochá|to investigate^订|dìng|to order^定|dìng|to fix^东部|dōngbù|eastern part^动车|dòngchē|high-speed train^动作|dòngzuò|movement^读者|dúzhě|reader^堵车|dǔchē|traffic jam^度假|dùjià|to go on vacation^肚子|dùzi|belly^短信|duǎnxìn|text message^队|duì|team; measure word^对方|duìfāng|the other party^对面|duìmiàn|opposite side^对于|duìyú|regarding^队员|duìyuán|team member^队长|duìzhǎng|team leader^顿|dùn|measure word for meals^多么|duōme|how^多数|duōshù|majority^多样|duōyàng|diverse^而|ér|but, and^儿童|értóng|child^发出|fāchū|to send out^发送|fāsòng|to send^法|fǎ|law^法律|fǎlǜ|law^翻译|fānyì|to translate; translation^烦|fán|annoyed^烦恼|fánnǎo|worried^反对|fǎnduì|to oppose^方面|fāngmiàn|aspect^方式|fāngshì|way^房东|fángdōng|landlord^房租|fángzū|rent^放弃|fàngqì|to give up^放松|fàngsōng|to relax^费|fèi|fee; to spend^费用|fèiyong|cost^分数|fēnshù|score^分为|fēnwéi|to be divided into^份|fèn|measure word for copies^丰富|fēngfù|rich^风景|fēngjǐng|scenery^否则|fǒuzé|otherwise^幅|fú|measure word for paintings^符合|fúhé|to conform to^付|fù|to pay^父母|fùmǔ|parents^父女|fùnǚ|father and daughter^父亲|fùqīn|father^复印|fùyìn|to photocopy^复杂|fùzá|complicated^负责|fùzé|to be responsible^负责人|fùzérén|person in charge^父子|fùzǐ|father and son^改|gǎi|to change^改变|gǎibiàn|to change^干|gān|dry^干杯|gānbēi|to toast^赶|gǎn|to hurry^敢|gǎn|to dare^感|gǎn|sense, feeling^感动|gǎndòng|moved; to move^赶紧|gǎnjǐn|quickly^感觉|gǎnjué|feeling; to feel^赶快|gǎnkuài|quickly^感情|gǎnqíng|emotion^感人|gǎnrén|touching^赶上|gǎnshàng|to catch up^感受|gǎnshòu|feeling; to feel^感谢|gǎnxiè|to thank^干活儿|gànhuór|to work^钢琴|gāngqín|piano^高价|gāojià|high price^高考|gāokǎo|college entrance exam^高速|gāosù|high speed^高温|gāowēn|high temperature^高于|gāoyú|higher than^胳膊|gēbo|arm^歌声|gēshēng|sound of singing^歌手|gēshǒu|singer^各|gè|each^各地|gèdì|various places^各个|gègè|each^各位|gèwèi|everyone^各种|gèzhǒng|various kinds^更加|gèngjiā|more^工厂|gōngchǎng|factory^功夫|gōngfu|kung fu^公共|gōnggòng|public^功课|gōngkè|schoolwork^公里|gōnglǐ|kilometer^公路|gōnglù|highway^工人|gōngrén|worker^工资|gōngzī|wage^共|gòng|together^共同|gòngtóng|common^够|gòu|enough^购买|gòumǎi|to purchase^购物|gòuwù|to shop^估计|gūjì|to estimate^姑娘|gūniang|girl^鼓励|gǔlì|to encourage^顾客|gùkè|customer^故意|gùyì|deliberately^挂|guà|to hang^关键|guānjiàn|crux; key^观看|guānkàn|to watch^观众|guānzhòng|audience^管|guǎn|control; pipe^管理|guǎnlǐ|manage^光|guāng|light; only^广播|guǎngbō|broadcast^广告|guǎnggào|advertisement^逛|guàng|stroll^规定|guīdìng|stipulate; regulation^国籍|guójí|nationality^国际|guójì|international^果汁|guǒzhī|fruit juice^过程|guòchéng|process^海洋|hǎiyáng|ocean^害羞|hàixiū|shy^寒假|hánjià|winter vacation^寒冷|hánlěng|cold^喊|hǎn|shout^汗|hàn|sweat^航班|hángbān|flight^好处|hǎochu|benefit^好好|hǎohāo|good; well^好笑|hǎoxiào|funny^合格|hégé|qualified^盒子|hézi|box^红包|hóngbāo|red envelope^厚|hòu|thick^后悔|hòuhuǐ|regret^忽然|hūrán|suddenly^互联网|hùliánwǎng|Internet^护士|hùshi|nurse^互相|hùxiāng|each other^话剧|huàjù|drama^怀疑|huáiyí|doubt^坏处|huàichù|disadvantage^环保|huánbǎo|environmental protection^换乘|huànchéng|transfer^回复|huífù|reply^回信|huíxìn|reply to a letter^回忆|huíyì|memory^会员|huìyuán|membership^活|huó|live; alive^活动|huódòng|move; activity^活泼|huópō|lively^火|huǒ|fire; popular^货|huò|goods^获得|huòdé|get^获奖|huòjiǎng|win a prize^获取|huòqǔ|gain^基本|jīběn|basic^基本上|jīběnshàng|basically^基础|jīchǔ|Basics^激动|jīdòng|excited^积极|jījí|positive^积累|jīlěi|to accumulate^及时|jíshí|timely^即使|jíshǐ|even if^既|jì|both...and...^寄|jì|send^计划|jìhuà|plan^既然|jìrán|since^技术|jìshù|technology^继续|jìxù|continue^记者|jìzhě|reporter^加班|jiābān|work overtime^家具|jiājù|furniture^加快|jiākuài|speed up^加强|jiāqiáng|strengthen^加入|jiārù|join^加上|jiāshàng|plus^家庭|jiātíng|family^家乡|jiāxiāng|hometown^加油|jiāyóu|oil; make an effort^加油站|jiāyóuzhàn|gas station^家长|jiāzhǎng|parent^假|jiǎ|false^价格|jiàgé|price^价钱|jiàqian|price^假日|jiàrì|holiday^减|jiǎn|to reduce^减轻|jiǎnqīng|to lighten^减少|jiǎnshǎo|to reduce^健身|jiànshēn|to exercise^健身房|jiànshēnfáng|gym^建议|jiànyì|to suggest; suggestion^江|jiāng|river^将|jiāng|will; with^将来|jiānglái|future^将要|jiāngyào|will^奖|jiǎng|prize; to award^奖金|jiǎngjīn|bonus^奖学金|jiǎngxuéjīn|scholarship^降|jiàng|to fall^降低|jiàngdī|to reduce^降价|jiàngjià|to reduce price^降落|jiàngluò|to descend^降温|jiàngwēn|to cool down^交|jiāo|to hand in; friend^骄傲|jiāo'ào|proud^交警|jiāojǐng|traffic police^交流|jiāoliú|communicate^郊区|jiāoqū|suburb^交通|jiāotōng|traffic^教练|jiàoliàn|coach^教师|jiàoshī|teacher^教授|jiàoshòu|professor^教学|jiàoxué|teach^教育|jiàoyù|education^叫作|jiàozuò|be called^街道|jiēdào|street^接受|jiēshòu|accept^接着|jiēzhe|to continue; then^结果|jiéguǒ|result^节假日|jiéjiàrì|festivals and holidays^节约|jiéyuē|to save^结账|jiézhàng|to pay the bill^解释|jiěshì|to explain^今后|jīnhòu|from now on^仅|jǐn|only^尽管|jǐnguǎn|although^仅仅|jǐnjǐn|only^紧张|jǐnzhāng|nervous^进入|jìnrù|to enter^进行|jìnxíng|to carry out^禁止|jìnzhǐ|to prohibit^精彩|jīngcǎi|brilliant^经济|jīngjì|economy; economical^京剧|jīngjù|Beijing opera^经历|jīnglì|to experience; experience^经验|jīngyàn|experience^警察|jǐngchá|police^景点|jǐngdiǎn|scenic spot^景区|jǐngqū|scenic area^景色|jǐngsè|scenery^竟然|jìngrán|unexpectedly^竞争|jìngzhēng|compete^镜子|jìngzi|mirror^究竟|jiūjìng|actually^就是|jiùshì|precisely^举|jǔ|to raise^举办|jǔbàn|to hold^举例|jǔlì|to give an example^举行|jǔxíng|to hold^聚|jù|to gather^聚餐|jùcān|to have a dinner together^聚会|jùhuì|to get together^拒绝|jùjué|to refuse^距离|jùlí|distance^剧院|jùyuàn|theater^开玩笑|kāi wánxiào|make fun of^看法|kànfǎ|view^烤|kǎo|to bake^考虑|kǎolǜ|to consider^考生|kǎoshēng|examinee^棵|kē|measure word for trees^科技|kējì|science and technology^科学|kēxué|science; scientific^咳|ké|to cough^咳嗽|késou|to cough^可惜|kěxī|regrettable^克|kè|gram^课程|kèchéng|curriculum^客气|kèqi|polite^课堂|kètáng|classroom^客厅|kètīng|living room^肯定|kěndìng|to be certain; surely^空|kōng|empty^空气|kōngqì|air^恐怕|kǒngpà|I'm afraid^空|kòng|empty; free time^口语|kǒuyǔ|spoken language^苦|kǔ|bitter^快餐|kuàicān|fast food^快递|kuàidì|express delivery^快速|kuàisù|fast^困|kùn|sleepy; to trap^困难|kùnnan|difficult^拉|lā|to pull^垃圾|lājī|garbage^辣|là|hot, spicy^来不及|láibùjí|there's not enough time^来得及|láidejí|there's still time^懒|lǎn|lazy^浪费|làngfèi|to waste^浪漫|làngmàn|romantic^老虎|lǎohǔ|tiger^老家|lǎojiā|hometown^老年|lǎonián|elderly^老是|lǎoshi|always^冷静|lěngjìng|calm^理发|lǐfà|to have a haircut^理解|lǐjiě|to understand^礼貌|lǐmào|courtesy; polite^理想|lǐxiǎng|ideal^厉害|lìhai|severe; impressive^力气|lìqi|strength^例如|lìrú|for example^例子|lìzi|example^俩|liǎ|two, both^连|lián|even; to connect^联系|liánxì|to contact^凉|liáng|cool^量|liáng|to measure^辆|liàng|measure word for vehicles^亮|liàng|bright^列|liè|to arrange; measure word for rows^零下|líng xià|below zero^零花钱|línghuāqián|pocket money^零钱|língqián|change^零食|língshí|snacks^另|lìng|other^另外|lìngwài|other; in addition^留|liú|to stay^流|liú|to flow^流利|liúlì|fluent^留下|liúxià|to leave behind^流行|liúxíng|to be popular^路过|lùguò|to pass by^旅馆|lǚguǎn|hotel^旅客|lǚkè|traveler^旅行|lǚxíng|to travel^律师|lǜshī|lawyer^乱|luàn|messy^落|luò|to fall^麻烦|máfan|troublesome^馒头|mántou|steamed bun^满|mǎn|full^毛巾|máojīn|towel^毛衣|máoyī|sweater^帽子|màozi|hat^美|měi|beautiful^美好|měihǎo|beautiful^美景|měijǐng|beautiful scenery^美丽|měilì|beautiful^美食|měishí|delicious food^梦|mèng|dream^梦想|mèngxiǎng|to dream; dream^密码|mìmǎ|password^免费|miǎnfèi|free of charge^面对|miànduì|to face^面试|miànshì|interview^秒|miǎo|second^民族|mínzú|ethnic group^末|mò|end^母女|mǔnǚ|mother and daughter^母亲|mǔqīn|mother^母子|mǔzǐ|mother and son^目标|mùbiāo|goal^目的|mùdì|purpose^目的地|mùdìdì|destination^目前|mùqián|currently^耐心|nàixīn|patient; patience^南部|nánbù|southern part^难道|nándào|could it be that...?^男士|nánshì|man^难受|nánshòu|uncomfortable^难忘|nánwàng|unforgettable^男性|nánxìng|male^内|nèi|inside^内容|nèiróng|content^内心|nèixīn|heart^能否|néng fǒu|whether or not^能够|nénggòu|can^能力|nénglì|ability^嗯|ng|uh-huh^年底|niándǐ|end of the year^年龄|niánlíng|age^农村|nóngcūn|rural area^弄|nòng|to do^女性|nǚxìng|female^暖和|nuǎnhuo|warm^偶尔|ǒu'ěr|occasionally^拍|pāi|to pat; to take photo^排|pái|to line up; row^牌|pái|card; brand^排队|páiduì|to line up^排球|páiqiú|volleyball^牌子|páizi|brand; sign^判断|pànduàn|to judge^陪|péi|to accompany^批评|pīpíng|to criticize^皮肤|pífū|skin^脾气|píqi|temperament^皮鞋|píxié|leather shoes^篇|piān|measure word for essays^片|piàn|piece; measure word^乒乓球|pīngpāngqiú|table tennis^平常|píngcháng|ordinary^破|pò|broken; to break^葡萄|pútáo|grape^葡萄酒|pútáojiǔ|wine^普遍|pǔbiàn|widespread^普通|pǔtōng|ordinary^普通话|pǔtōnghuà|Mandarin^期|qī|period; issue^期末|qīmò|end of term^期中|qīzhōng|midterm^其次|qícì|next^其中|qízhōng|among them^起到|qǐdào|to play the role of^气|qì|air; to anger^气候|qìhòu|climate^汽水|qìshuǐ|soda^气温|qìwēn|air temperature^千克|qiānkè|kilogram^千万|qiānwàn|ten million; by all means^签证|qiānzhèng|visa^前方|qiánfāng|ahead^前后|qiánhòu|around; about^强|qiáng|strong^敲|qiāo|to knock^桥|qiáo|bridge^巧|qiǎo|skillful^巧克力|qiǎokèlì|chocolate^亲戚|qīnqi|relative^琴|qín|musical instrument^轻|qīng|light^青年|qīngnián|youth^轻松|qīngsōng|relaxed^情况|qíngkuàng|situation^庆祝|qìngzhù|to celebrate^球队|qiúduì|sports team^球迷|qiúmí|fan^区|qū|district^区别|qūbié|difference; to distinguish^取|qǔ|to take^取得|qǔdé|to obtain^取消|qǔxiāo|to cancel^全|quán|whole^全部|quánbù|all^全都|quándōu|all^全球|quánqiú|the whole world^全身|quánshēn|whole body^缺|quē|to lack^缺点|quēdiǎn|shortcoming^缺少|quēshǎo|to lack^却|què|but^确实|quèshí|indeed^然而|rán'ér|however^热闹|rènao|lively^人生|rénshēng|life^人数|rénshù|number of people^人员|rényuán|personnel^任何|rènhé|any^任务|rènwu|task^扔|rēng|to throw^仍|réng|still^仍然|réngrán|still^日常|rìcháng|daily^日记|rìjì|diary^日期|rìqī|date^日子|rìzi|day; life^入|rù|to enter^入口|rùkǒu|entrance^入学|rùxué|to enter school^入住|rùzhù|to check in^散步|sànbù|to take a walk^扫码|sǎomǎ|to scan a code^森林|sēnlín|forest^商量|shāngliang|to discuss^商品|shāngpǐn|product^伤心|shāngxīn|sad^上门|shàngmén|to visit^稍|shāo|a little^稍微|shāowēi|a little^少见|shǎojiàn|rare^少量|shǎoliàng|small amount^少数|shǎoshù|minority^少年|shàonián|juvenile^社会|shèhuì|society^摄氏度|shèshìdù|degrees Celsius^身|shēn|body; measure word for clothes^深|shēn|deep^身份证|shēnfènzhèng|ID card^申请|shēnqǐng|to apply^甚至|shènzhì|even^生|shēng|to give birth; raw^生命|shēngmìng|life^生意|shēngyi|business^省|shěng|province^剩|shèng|to be left over^失败|shībài|to fail^师傅|shīfu|master^失去|shīqù|to lose^师生|shīshēng|teacher and student^失望|shīwàng|disappointed^十分|shífēn|very^实际|shíjì|reality; actual^时间表|shíjiānbiǎo|schedule^实际上|shíjìshàng|actually^食品|shípǐn|food^食堂|shítáng|cafeteria^食物|shíwù|food^实在|shízài|honest; really^十字路口|shízì lùkǒu|intersection^使|shǐ|to make^使馆|shǐguǎn|embassy^使用|shǐyòng|to use^市场|shìchǎng|market^是否|shìfǒu|whether or not^适合|shìhé|to suit^世纪|shìjì|century^视频|shìpín|video^市区|shìqū|urban area^试题|shìtí|test questions^适应|shìyìng|to adapt^收费|shōufèi|to charge a fee^收入|shōurù|income^收拾|shōushi|to put in order^收听|shōutīng|to listen in^首|shǒu|measure word for songs^首都|shǒudū|capital^首先|shǒuxiān|first^受不了|shòubuliǎo|to be unable to bear^售票员|shòupiàoyuán|ticket seller^受伤|shòushāng|to be injured^输|shū|to lose^熟|shú|ripe; familiar^熟悉|shúxī|to be familiar with^暑假|shǔjià|summer vacation^数|shù|number; several^数量|shùliàng|quantity^树林|shùlín|woods^数字|shùzì|digit^帅|shuài|handsome^顺便|shùnbiàn|conveniently^顺利|shùnlì|smooth^顺序|shùnxù|order^说法|shuōfǎ|way of saying^说明|shuōmíng|to explain; explanation^说明书|shuōmíngshū|instruction manual^硕士|shuòshì|master^死|sǐ|to die; dead^速度|sùdù|speed^塑料|sùliào|plastic^酸|suān|sour^酸奶|suānnǎi|yogurt^算|suàn|to calculate; considered^随便|suíbiàn|casual; whatever^随着|suízhe|along with^孙女|sūnnǚ|granddaughter^孙子|sūnzi|grandson^所有|suǒyǒu|all; to possess^台|tái|measure word for machines^抬|tái|to lift^抬头|táitóu|to raise one's head^态度|tàidu|attitude^弹|tán|to play^谈|tán|to talk^汤|tāng|soup^躺|tǎng|to lie down^趟|tàng|measure word for trips^讨论|tǎolùn|to discuss^讨厌|tǎoyàn|disgusting; to dislike^特点|tèdiǎn|characteristic^提|tí|to carry; to mention^提出|tíchū|to put forward^提到|tídào|to mention^提供|tígōng|to provide^提前|tíqián|to advance^提醒|tíxǐng|to remind^体检|tǐjiǎn|to undergo physical exam^体温|tǐwēn|body temperature^体重|tǐzhòng|body weight^填写|tiánxiě|to fill in^条件|tiáojiàn|condition^听力|tīnglì|listening ability^听众|tīngzhòng|audience^停|tíng|to stop^停车|tíngchē|to park^停车场|tíngchēchǎng|parking lot^停止|tíngzhǐ|to stop^通|tōng|to go through^通过|tōngguò|to pass through^通知|tōngzhī|to notify; notice^童年|tóngnián|childhood^同时|tóngshí|at the same time^同样|tóngyàng|same^桶|tǒng|bucket^痛|tòng|painful^头痛|tóutòng|headache^图|tú|picture; to plan^图片|túpiàn|picture^土|tǔ|earth; rustic^推|tuī|to push^推迟|tuīchí|to postpone^推出|tuīchū|to launch^脱|tuō|to take off^袜子|wàzi|socks^外出|wàichū|to go out^外套|wàitào|coat^完全|wánquán|complete; completely^晚安|wǎn'ān|good night^晚餐|wǎncān|dinner^网购|wǎnggòu|to shop online^往往|wǎngwǎng|often^网页|wǎngyè|webpage^网友|wǎngyǒu|netizen^网址|wǎngzhǐ|website URL^危险|wēixiǎn|dangerous; danger^为|wéi|to do; to serve as^味|wèi|taste^味道|wèidao|taste^卫生|wèishēng|hygiene^温度|wēndù|temperature^闻|wén|to smell^文件|wénjiàn|document^文章|wénzhāng|essay^文字|wénzì|writing^污染|wūrǎn|contaminated^无|wú|to lack^无法|wúfǎ|unable^无聊|wúliáo|boring^无论|wúlùn|no matter what^午餐|wǔcān|lunch^误会|wùhuì|to misunderstand^吸|xī|to suck^西部|xībù|western region^西红柿|xīhóngshì|tomato^吸引|xīyǐn|to attract^细|xì|thin; detailed^细心|xìxīn|careful^下降|xiàjiàng|to decline^鲜|xiān|fresh^鲜花|xiānhuā|fresh flower^咸|xián|salty^现金|xiànjīn|cash^羡慕|xiànmù|to envy^线上|xiànshàng|online^线下|xiànxià|offline^现有|xiànyǒu|existing^香|xiāng|fragrant^相比|xiāngbǐ|to compare with^相反|xiāngfǎn|opposite^相互|xiānghù|mutual^相同|xiāngtóng|same^详细|xiángxì|detailed^响|xiǎng|to make a sound; loud^想法|xiǎngfǎ|thought^项|xiàng|measure word for items^消息|xiāoxi|news^小吃|xiǎochī|snack^小伙子|xiǎohuǒzi|young man^小说|xiǎoshuō|novel^小组|xiǎozǔ|small group^效果|xiàoguǒ|effect^笑话|xiàohua|joke^血|xuè|blood^心|xīn|heart^辛苦|xīnkǔ|hard; to work hard^心情|xīnqíng|mood^信号|xìnhào|signal^信息|xìnxī|information^信心|xìnxīn|confidence^兴奋|xīngfèn|excited^星星|xīngxing|star^醒|xǐng|to wake up^性|xìng|nature; character^性别|xìngbié|gender^幸福|xìngfú|happiness; happy^性格|xìnggé|character^兄弟|xiōngdì|brothers^熊|xióng|bear^修|xiū|to repair^修理|xiūlǐ|to repair^许多|xǔduō|many^学费|xuéfèi|tuition fee^学院|xuéyuàn|college^压|yā|to press^压力|yālì|pressure^牙膏|yágāo|toothpaste^亚洲|Yàzhōu|Asia^烟|yān|cigarette^盐|yán|salt^严格|yángé|strict^研究|yánjiū|to research^研究生|yánjiūshēng|graduate student^严重|yánzhòng|serious^演|yǎn|to act^演唱|yǎnchàng|to sing^演出|yǎnchū|to perform^眼镜|yǎnjìng|eyeglasses^眼前|yǎnqián|before one's eyes^演员|yǎnyuán|actor^阳光|yángguāng|sunlight^养成|yǎngchéng|to develop^样子|yàngzi|appearance^邀请|yāoqǐng|to invite^要是|yàoshi|if^钥匙|yàoshi|key^也许|yěxǔ|maybe^夜|yè|night^夜晚|yèwǎn|night^叶子|yèzi|leaf^一切|yīqiè|everything^已|yǐ|already^以内|yǐnèi|within^意见|yìjiàn|opinion^一生|yìshēng|lifetime^艺术|yìshù|art^因此|yīncǐ|therefore^引起|yǐnqǐ|cause^印象|yìnxiàng|impression^赢|yíng|win^赢得|yíngdé|gain^应聘|yìngpìn|to apply for a job^勇敢|yǒnggǎn|brave^永远|yǒngyuǎn|forever^用来|yònglái|to be used for^用于|yòngyú|to be used for^优点|yōudiǎn|advantage^幽默|yōumò|humorous^优秀|yōuxiù|excellent^由|yóu|by, through^油|yóu|oil^尤其|yóuqí|especially^游玩|yóuwán|to play; to go sightseeing^由于|yóuyú|because of^友好|yǒuhǎo|friendly^友情|yǒuqíng|friendship^有趣|yǒuqù|interesting^有效|yǒuxiào|effective^友谊|yǒuyì|friendship^有着|yǒuzhe|to have^愉快|yúkuài|pleasant^于是|yúshì|therefore^与|yǔ|with; and^语法|yǔfǎ|grammar^预习|yùxí|to preview^原来|yuánlái|original; originally^原谅|yuánliàng|to forgive^原因|yuányīn|cause^远离|yuǎnlí|to stay away from^院长|yuànzhǎng|dean^院子|yuànzi|courtyard^约|yuē|to make an appointment; about^约会|yuēhuì|to date; date^月饼|yuèbǐng|mooncake^阅读|yuèdú|to read^月份|yuèfèn|month^云|yún|cloud^允许|yǔnxǔ|to permit^杂志|zázhì|magazine^再次|zàicì|once again^再说|zàishuō|to put off; besides^暂时|zànshí|temporary^暂停|zàntíng|to suspend^早餐|zǎocān|breakfast^早晨|zǎochen|morning^责任|zérèn|responsibility^增加|zēngjiā|to increase^增长|zēngzhǎng|to increase^招聘|zhāopìn|to recruit^着|zháo|to touch; to catch fire^着火|zháohuǒ|to catch fire^者|zhě|person who^真正|zhēnzhèng|true; truly^整|zhěng|whole^整个|zhěnggè|whole^整理|zhěnglǐ|to arrange^证|zhèng|certificate^正常|zhèngcháng|normal^正好|zhènghǎo|exactly right^证件|zhèngjiàn|ID card; credentials^证明|zhèngmíng|to prove; proof^正确|zhèngquè|correct^正式|zhèngshì|formal^之|zhī|auxiliary word^支持|zhīchí|to support^支付|zhīfù|to pay^之后|zhīhòu|after^之间|zhījiān|between^之前|zhīqián|before^知识|zhīshi|knowledge^之中|zhīzhōng|among^值|zhí|to be worth; valuable^值得|zhíde|to be worth^直接|zhíjiē|direct^植物|zhíwù|plant^职业|zhíyè|occupation^指|zhǐ|to point to^指出|zhǐchū|to point out^只好|zhǐhǎo|have to^纸巾|zhǐjīn|tissue paper^质量|zhìliàng|quality^至少|zhìshǎo|at least^中餐|zhōngcān|Chinese food^中年|zhōngnián|middle age^种|zhòng|to plant^重|zhòng|weight; heavy^重点|zhòngdiǎn|key point^重视|zhòngshì|to pay attention to^周围|zhōuwéi|around^主意|zhǔyì|idea^祝|zhù|to wish^祝贺|zhùhè|to congratulate^著名|zhùmíng|famous^专门|zhuānmén|specially; special^专业|zhuānyè|specialty; professional^转|zhuǎn|to turn; to transfer^转发|zhuǎnfā|to forward^转机|zhuǎnjī|to transfer (flight)^赚|zhuàn|to earn^装|zhuāng|to load; to pretend^准|zhǔn|accurate^准确|zhǔnquè|accurate^准时|zhǔnshí|on time^资料|zīliào|materials^仔细|zǐxì|careful^自|zì|from; oneself^自然|zìrán|nature; natural^自习|zìxí|to study on one's own^自信|zìxìn|confident^自学|zìxué|to teach oneself^总结|zǒngjié|to summarize; summary^租|zū|to rent^组|zǔ|group; to organize^最终|zuìzhōng|final^尊重|zūnzhòng|to respect^左右|zuǒyòu|about; left and right^座|zuò|seat; measure word for seats^做法|zuòfǎ|way of doing things^作家|zuòjiā|writer^做梦|zuòmèng|to dream^作品|zuòpǐn|work^作为|zuòwéi|to act as; as^座位|zuòwèi|seat^作文|zuòwén|composition^作用|zuòyòng|function^作者|zuòzhě|author";
         
         const hskDb = {};
         const allMeanings = [];
@@ -321,152 +274,104 @@
             }
         });
 
-        // Global state
+        // Global State
         let puterAvailable = false;
-        
-        // Helper to safely extract string from AI Response
-        function getAiText(response) {
-            let txt = typeof response === 'string' ? response : (response?.text || response?.message?.content || String(response));
-            return txt.replace(/```[\w]*\n?/g, '').trim(); // Remove markdown code wrappers if AI adds them
-        }
+        const aiStatusIndicator = document.getElementById('ai-status');
+        const processButton = document.getElementById('process-text-button');
+        const startTestButton = document.getElementById('start-test-button');
+        const textInput = document.getElementById('chinese-text-input');
 
         document.addEventListener('DOMContentLoaded', async function() {
-            const aiStatusIndicator = document.getElementById('ai-status');
-            const aiMissingCheck = document.getElementById('ai-missing-checkbox');
-            const aiSmartCheck = document.getElementById('ai-smart-options-checkbox');
-
-            // 1. Check Puter Connection
+            
+            // ==========================================
+            // EXACT IMPLEMENTATION FROM FITNESS APP
+            // ==========================================
             async function checkPuterConnection() {
+                aiStatusIndicator.textContent = "Testing connection to Puter.ai...";
+                aiStatusIndicator.className = "status-indicator status-testing";
+                
                 try {
                     if (typeof puter === 'undefined' || typeof puter.ai === 'undefined') {
                         throw new Error("Puter.js library not loaded properly");
                     }
-                    await puter.ai.chat("Ping", { model: 'claude-sonnet-4', stream: false });
+                    
+                    // Simple test request
+                    const testResponse = await puter.ai.chat(
+                        "Ping test", 
+                        {model: 'claude-sonnet-4', stream: false}
+                    );
+                    
                     puterAvailable = true;
                     aiStatusIndicator.textContent = "✓ Connected to AI (Puter.ai)";
-                    aiStatusIndicator.className = "ai-status status-connected";
+                    aiStatusIndicator.className = "status-indicator status-connected";
+                    
+                    // Enable buttons
+                    processButton.disabled = false;
+                    startTestButton.disabled = false;
+                    processButton.textContent = "Show Characters Grid";
+                    startTestButton.textContent = "Start Memory Test (5s)";
+                    
                 } catch (error) {
-                    console.error("AI Connection Failed:", error);
+                    console.error("Connection test failed:", error);
+                    
+                    if (error.message && (
+                        error.message.includes('Cloudflare') || 
+                        error.message.includes('challenge') || 
+                        error.message.includes('captcha') ||
+                        error.message.includes('blocked') ||
+                        error.message.includes('403') ||
+                        error.message.includes('524')
+                    )) {
+                        aiStatusIndicator.textContent = "Cloudflare protection active. Using local DB only.";
+                    } else {
+                        aiStatusIndicator.textContent = "⚠️ AI service unavailable. Using local DB only.";
+                    }
+                    aiStatusIndicator.className = "status-indicator status-error";
+                    
+                    // Still enable app, but without AI features
                     puterAvailable = false;
-                    aiStatusIndicator.textContent = "⚠️ AI service unavailable. Falling back to local offline database.";
-                    aiStatusIndicator.className = "ai-status status-error";
-                    aiMissingCheck.checked = false;
-                    aiSmartCheck.checked = false;
-                    aiMissingCheck.disabled = true;
-                    aiSmartCheck.disabled = true;
+                    processButton.disabled = false;
+                    startTestButton.disabled = false;
+                    processButton.textContent = "Show Characters Grid";
+                    startTestButton.textContent = "Start Memory Test (5s)";
+                    
+                    document.getElementById('ai-missing-checkbox').disabled = true;
+                    document.getElementById('ai-smart-options-checkbox').disabled = true;
                 }
             }
+
+            // Exactly like sendMessageWithPuter in Fitness App, we use Stream: True to safely extract text
+            async function askPuterAI(promptText) {
+                if (!puterAvailable) throw new Error("Puter.ai not available");
+                
+                let fullResponse = '';
+                const response = await puter.ai.chat(promptText, {model: 'claude-sonnet-4', stream: true});
+                
+                // Iterating precisely as done in the Fitness App
+                for await (const part of response) {
+                    if (part?.text) {
+                        fullResponse += part.text;
+                    }
+                }
+                return fullResponse.trim();
+            }
+            
+            // Check connection on load
             await checkPuterConnection();
 
-            const textInput = document.getElementById('chinese-text-input');
-            const processButton = document.getElementById('process-text-button');
-            const startTestButton = document.getElementById('start-test-button');
+            // ==========================================
+            // END OF EXACT FITNESS APP IMPLEMENTATION
+            // ==========================================
+
             const gridOutput = document.getElementById('character-grid-output');
             const voiceSelectDropdown = document.getElementById('voice-select');
             const voiceWrapper = document.getElementById('voice-wrapper');
             const inputSection = document.querySelector('.input-section');
-            
             const teachSection = document.getElementById('teach-section');
-            const teachNextBtn = document.getElementById('teach-next-btn');
-            const teachSkipBtn = document.getElementById('teach-skip-btn');
-            const teachCheckbox = document.getElementById('teach-first-checkbox');
-            
             const testSection = document.getElementById('test-section');
-            const endTestBtn = document.getElementById('end-test-btn');
             
             const hanziRegex = /\p{Script=Han}/u;
             const punctuationAndWhitespaceRegex = /[\s\u2000-\u206F\u3000-\u303F\uFF00-\uFFEF,\.:;'"()\[\]{}?!<>+\-=\/\*&^%$#@~`|\\]/;
-
-            // --- TTS Setup Logic ---
-            const synth = window.speechSynthesis;
-            let availableVoices = [];
-            const TARGET_DEFAULT_VOICE_KEYWORD = "xiaoyi"; 
-            let voicesLoadedInitially = false;
-
-            function populateVoiceListDropdown(dropdownElement) {
-                if (!dropdownElement) return;
-                dropdownElement.innerHTML = ''; 
-                if (availableVoices.length === 0) { dropdownElement.innerHTML = '<option value="">Loading voices...</option>'; return; }
-                let preferredDefaultOptionValue = null; let firstChineseVoiceValueForDropdown = null;
-                const fragment = document.createDocumentFragment();
-                const defaultLogicOption = document.createElement('option');
-                defaultLogicOption.textContent = `Default (Try: ${TARGET_DEFAULT_VOICE_KEYWORD} variant)`;
-                defaultLogicOption.value = ""; 
-                fragment.appendChild(defaultLogicOption);
-                const chineseVoiceOptions = [];
-                availableVoices.forEach((voice, index) => {
-                    const option = document.createElement('option');
-                    option.textContent = `${voice.name} (${voice.lang})`; option.value = index.toString(); 
-                    if (voice.lang.startsWith('zh-CN') || voice.lang.startsWith('zh')) {
-                        fragment.appendChild(option); chineseVoiceOptions.push(option);
-                        if (voice.name.toLowerCase().includes(TARGET_DEFAULT_VOICE_KEYWORD)) {
-                            if (preferredDefaultOptionValue === null) preferredDefaultOptionValue = option.value;
-                        }
-                        if (firstChineseVoiceValueForDropdown === null) firstChineseVoiceValueForDropdown = option.value;
-                    }
-                });
-                
-                if (chineseVoiceOptions.length === 0) {
-                     const noChineseOption = document.createElement('option');
-                     noChineseOption.textContent = "No Chinese voices found"; noChineseOption.disabled = true;
-                     fragment.insertBefore(noChineseOption, defaultLogicOption.nextSibling); 
-                }
-                const nonChineseVoices = availableVoices.filter(v => !(v.lang.startsWith('zh-CN') || v.lang.startsWith('zh')));
-                if (nonChineseVoices.length > 0) {
-                    const separator = document.createElement('option'); separator.textContent = "--- Other Voices ---"; separator.disabled = true;
-                    fragment.appendChild(separator);
-                    nonChineseVoices.forEach((voice) => { 
-                        const originalIndex = availableVoices.indexOf(voice);
-                        const option = document.createElement('option'); option.textContent = `${voice.name} (${voice.lang})`; option.value = originalIndex.toString();
-                        fragment.appendChild(option);
-                    });
-                }
-                dropdownElement.appendChild(fragment);
-                if (preferredDefaultOptionValue !== null) dropdownElement.value = preferredDefaultOptionValue;
-                else if (firstChineseVoiceValueForDropdown !== null) dropdownElement.value = firstChineseVoiceValueForDropdown;
-                else dropdownElement.value = ""; 
-            }
-            
-            function loadAndPopulateVoices() {
-                if (typeof synth.getVoices !== 'function') { populateVoiceListDropdown(voiceSelectDropdown); return; }
-                availableVoices = synth.getVoices(); 
-                if (availableVoices.length > 0) {
-                    voicesLoadedInitially = true; populateVoiceListDropdown(voiceSelectDropdown);
-                    if (synth.onvoiceschanged === loadAndPopulateVoices) synth.onvoiceschanged = null; 
-                } else if (!voicesLoadedInitially && (synth.onvoiceschanged === null || synth.onvoiceschanged === undefined) ) { 
-                    synth.onvoiceschanged = () => { voicesLoadedInitially = true; loadAndPopulateVoices(); synth.onvoiceschanged = null; };
-                }
-            }
-            if (synth && synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadAndPopulateVoices; 
-            loadAndPopulateVoices(); 
-
-            function speakCharacter(char) {
-                if (!char) return;
-                if (synth.speaking) synth.cancel();
-                setTimeout(() => {
-                    const utterThis = new SpeechSynthesisUtterance(char);
-                    utterThis.lang = 'zh-CN'; utterThis.rate = 0.85; utterThis.pitch = 1.0;  
-                    const selectedDropdownValue = voiceSelectDropdown.value;
-                    let targetVoice = null;
-                    if (selectedDropdownValue !== "" && selectedDropdownValue !== null) {
-                        const idx = parseInt(selectedDropdownValue, 10);
-                        if (idx >= 0 && idx < availableVoices.length) targetVoice = availableVoices[idx];
-                    }
-                    if (!targetVoice) {
-                        targetVoice = availableVoices.find(voice => voice.lang.startsWith('zh-CN') && voice.name.toLowerCase().includes(TARGET_DEFAULT_VOICE_KEYWORD));
-                        if (!targetVoice) { 
-                            const preferredVoiceNameParts = ["Google 普通话", "Microsoft Kangkang", "Microsoft Huihui", "Microsoft Yaoyao", "Ting-Ting", "Li-mu", "Mei-Jia"];
-                            for (const namePart of preferredVoiceNameParts) {
-                                targetVoice = availableVoices.find(voice => voice.lang.startsWith('zh-CN') && voice.name.toLowerCase().includes(namePart.toLowerCase()));
-                                if (targetVoice) break;
-                            }
-                        }
-                        if (!targetVoice) targetVoice = availableVoices.find(voice => voice.lang.startsWith('zh-CN'));
-                    }
-                    if (targetVoice) { utterThis.voice = targetVoice; utterThis.lang = targetVoice.lang; }
-                    synth.speak(utterThis);
-                }, 50); 
-            }
 
             // Core State
             let testItems = [];
@@ -481,7 +386,7 @@
             let teachItems = [];
             let currentTeachIndex = 0;
 
-            // --- AI Fetch Missing Words Function ---
+            // --- AI Feature 1: Fetch Missing Words ---
             async function fetchMissingWordsFromAI(missingCharsList) {
                 if(!puterAvailable || missingCharsList.length === 0) return;
                 
@@ -489,16 +394,13 @@
                 startTestButton.disabled = true;
 
                 try {
-                    const prompt = `Given these Chinese characters: ${missingCharsList.join(',')}. 
-Provide the pinyin and short English meaning for each. 
-CRITICAL: Reply ONLY with the exact format below. No markdown blocks, no intro text.
-Format:
-Character|pinyin|meaning`;
+                    const prompt = `Translate these Chinese characters: ${missingCharsList.join(', ')}. 
+CRITICAL: Reply ONLY with the exact format below, one per line. No intro, no markdown.
+Character|pinyin|short meaning in english`;
                     
-                    const response = await puter.ai.chat(prompt, { model: 'claude-sonnet-4' });
-                    const text = getAiText(response);
-                    
+                    const text = await askPuterAI(prompt);
                     const lines = text.split('\n');
+                    
                     lines.forEach(line => {
                         const parts = line.split('|');
                         if (parts.length >= 3) {
@@ -510,7 +412,7 @@ Character|pinyin|meaning`;
                         }
                     });
                 } catch(e) {
-                    console.error("Failed to fetch missing words via AI", e);
+                    console.error("Failed to fetch missing words", e);
                 } finally {
                     startTestButton.innerHTML = "Start Memory Test (5s)";
                     startTestButton.disabled = false;
@@ -569,18 +471,15 @@ Character|pinyin|meaning`;
 
                 const allChars = Array.from(text).filter(char => hanziRegex.test(char) && !punctuationAndWhitespaceRegex.test(char));
                 
-                // If AI Missing is checked, pre-fetch any chars not in DB
-                if (puterAvailable && aiMissingCheck.checked) {
+                // If AI Missing is checked, pre-fetch
+                if (puterAvailable && document.getElementById('ai-missing-checkbox').checked) {
                     const missingChars = [...new Set(allChars.filter(c => !hskDb[c]))];
-                    if (missingChars.length > 0) {
-                        await fetchMissingWordsFromAI(missingChars);
-                    }
+                    if (missingChars.length > 0) await fetchMissingWordsFromAI(missingChars);
                 }
 
-                testItems = [];
-                mistakeCounts = {}; // reset mistakes
+                testItems = []; mistakeCounts = {};
 
-                // 1. Find multichar words
+                // Find multichar words
                 Object.keys(hskDb).forEach(word => {
                     if (word.length > 1 && text.includes(word)) {
                         let count = text.split(word).length - 1;
@@ -590,19 +489,17 @@ Character|pinyin|meaning`;
                     }
                 });
 
-                // 2. Add single characters 
+                // Add single characters 
                 allChars.forEach(char => {
                     testItems.push({ 
-                        word: char, 
-                        pinyin: hskDb[char] ? hskDb[char].pinyin : "???", 
-                        meaning: hskDb[char] ? hskDb[char].meaning : `Character: ${char}`,
-                        testState: 'new'
+                        word: char, pinyin: hskDb[char] ? hskDb[char].pinyin : "???", 
+                        meaning: hskDb[char] ? hskDb[char].meaning : `Char: ${char}`, testState: 'new'
                     });
                 });
 
-                if (testItems.length === 0) { alert("No Chinese characters found to test."); return; }
+                if (testItems.length === 0) { alert("No Chinese characters found."); return; }
 
-                if (teachCheckbox.checked) startTeachPhase();
+                if (document.getElementById('teach-first-checkbox').checked) startTeachPhase();
                 else startActualTest();
             });
 
@@ -635,8 +532,8 @@ Character|pinyin|meaning`;
                 speakCharacter(currentItem.word);
             }
 
-            teachNextBtn.addEventListener('click', () => { currentTeachIndex++; loadNextTeachItem(); });
-            teachSkipBtn.addEventListener('click', () => { startActualTest(); });
+            document.getElementById('teach-next-btn').addEventListener('click', () => { currentTeachIndex++; loadNextTeachItem(); });
+            document.getElementById('teach-skip-btn').addEventListener('click', () => { startActualTest(); });
 
 
             // --- Actual Memory Test Logic ---
@@ -650,19 +547,19 @@ Character|pinyin|meaning`;
                 loadNextQuestion();
             }
 
+            // --- AI Feature 2: Smart Options ---
             async function getAI_SmartOptions(word, pinyin, meaning) {
-                const prompt = `Provide 3 plausible but incorrect multiple-choice options for a student learning the Chinese word '${word}' (${pinyin}: ${meaning}). 
-CRITICAL: Reply ONLY with the 3 lines. Do not use numbers or bullets. Do not use markdown.
-Format each line strictly like this:
-pinyin | meaning`;
+                const prompt = `Provide 3 incorrect but believable multiple-choice options for a student testing on the Chinese word '${word}' (${pinyin}: ${meaning}). 
+CRITICAL: Reply ONLY with 3 lines. No bullet points, no numbers.
+Format:
+pinyin | english meaning`;
                 try {
-                    const response = await puter.ai.chat(prompt, { model: 'claude-sonnet-4' });
-                    const text = getAiText(response);
+                    const text = await askPuterAI(prompt);
                     const lines = text.split('\n');
                     
                     let smartOptions = [];
                     lines.forEach(l => {
-                        let cleanLine = l.replace(/^[\d\.\-\*\s]+/, '').trim(); // Remove leading bullets/numbers
+                        let cleanLine = l.replace(/^[\d\.\-\*\s]+/, '').trim(); // Remove bullets/numbers just in case
                         const parts = cleanLine.split('|');
                         if (parts.length >= 2) {
                             smartOptions.push(`${parts[0].trim()} | ${parts[1].trim()}`);
@@ -670,7 +567,7 @@ pinyin | meaning`;
                     });
                     return smartOptions;
                 } catch(e) {
-                    console.error("Failed to generate smart options", e);
+                    console.error("AI Smart options failed", e);
                     return [];
                 }
             }
@@ -697,18 +594,15 @@ pinyin | meaning`;
                 const currentOptionText = `${currentItem.pinyin} | ${currentItem.meaning}`;
                 let options = [currentOptionText];
 
-                // Generate Options (AI vs Random)
-                if (puterAvailable && aiSmartCheck.checked) {
+                // Attempt AI Smart Options
+                if (puterAvailable && document.getElementById('ai-smart-options-checkbox').checked) {
                     document.getElementById('test-ai-loader').style.display = 'flex';
                     const aiDistractors = await getAI_SmartOptions(currentItem.word, currentItem.pinyin, currentItem.meaning);
                     document.getElementById('test-ai-loader').style.display = 'none';
-                    
-                    if (aiDistractors.length >= 3) {
-                        options = [currentOptionText, ...aiDistractors.slice(0,3)];
-                    }
+                    if (aiDistractors.length >= 3) { options = [currentOptionText, ...aiDistractors.slice(0,3)]; }
                 } 
 
-                // Fallback to random if AI fails or is disabled
+                // Fallback options
                 if (options.length < 4) {
                     const targetLength = currentItem.word.length;
                     const validDistractors = allMeanings.filter(item => item.length === targetLength);
@@ -733,52 +627,41 @@ pinyin | meaning`;
                     optionsContainer.appendChild(btn);
                 });
 
-                // Start Timer
                 timeLeft = 5;
                 timerInterval = setInterval(() => {
-                    timeLeft--;
-                    document.getElementById('time-left').innerText = timeLeft;
+                    timeLeft--; document.getElementById('time-left').innerText = timeLeft;
                     if (timeLeft <= 0) handleAnswer(null, currentOptionText, null, currentItem);
                 }, 1000);
             }
 
+            // --- AI Feature 3: Three-Strike Intervention ---
             async function triggerAIIntervention(item) {
-                isAnswering = true; // Block test progression
+                isAnswering = true; 
                 const modal = document.getElementById('intervention-modal');
                 const loading = document.getElementById('intervention-loading');
                 const result = document.getElementById('intervention-result');
                 const topWordBox = document.getElementById('intervention-top-word');
                 
-                modal.style.display = 'flex';
-                loading.style.display = 'block';
-                result.style.display = 'none';
+                modal.style.display = 'flex'; loading.style.display = 'block'; result.style.display = 'none';
                 topWordBox.innerHTML = '';
 
-                // 1. Animate word on top separately
+                // Draw main word in modal
                 Array.from(item.word).forEach((char, idx) => {
-                    const box = document.createElement('div');
-                    box.id = `interv-char-${idx}`;
-                    box.className = 'test-char-box';
-                    topWordBox.appendChild(box);
-                    if (hanziRegex.test(char)) {
-                        HanziWriter.create(box.id, char, { width: 80, height: 80, padding: 5, strokeAnimationSpeed: 1, delayBetweenStrokes: 50 }).animateCharacter();
-                    } else {
-                        box.innerHTML = `<span style="font-size:60px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`;
-                    }
+                    const box = document.createElement('div'); box.id = `interv-char-${idx}`; box.className = 'test-char-box'; topWordBox.appendChild(box);
+                    if (hanziRegex.test(char)) { HanziWriter.create(box.id, char, { width: 80, height: 80, padding: 5, strokeAnimationSpeed: 1, delayBetweenStrokes: 50 }).animateCharacter(); }
+                    else { box.innerHTML = `<span style="font-size:60px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`; }
                 });
 
-                // 2. Fetch Report & Sentence using strict tags
-                const prompt = `The user failed to remember the Chinese word '${item.word}' (${item.pinyin}: ${item.meaning}) 3 times.
+                const prompt = `The user failed to remember the Chinese word '${item.word}' (${item.pinyin}: ${item.meaning}).
 Provide a short mnemonic, an example sentence, its pinyin, and translation.
-CRITICAL: You must use exactly these tags to format your response, and nothing else:
-[MNEMONIC] your short mnemonic here
-[SENTENCE] your chinese sentence here
-[PINYIN] sentence pinyin here
-[TRANSLATION] english translation here`;
+CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
+[MNEMONIC] short memory trick
+[SENTENCE] very short chinese sentence
+[PINYIN] pinyin of sentence
+[TRANSLATION] english meaning`;
 
                 try {
-                    const response = await puter.ai.chat(prompt, { model: 'claude-sonnet-4' });
-                    const text = getAiText(response);
+                    const text = await askPuterAI(prompt);
                     
                     const extractTag = (txt, tag) => {
                         const regex = new RegExp(`\\[${tag}\\]\\s*([\\s\\S]*?)(?=\\[|$)`, 'i');
@@ -791,7 +674,6 @@ CRITICAL: You must use exactly these tags to format your response, and nothing e
                     const pinyin = extractTag(text, "PINYIN") || "Wǒ xǐhuān...";
                     const trans = extractTag(text, "TRANSLATION") || `I like ${item.word}.`;
 
-                    // Populating UI
                     document.getElementById('intervention-report').innerHTML = `<strong>Mnemonic:</strong><br>${mnemonic.replace(/\n/g, '<br>')}`;
                     document.getElementById('intervention-sent-pinyin').innerText = pinyin;
                     document.getElementById('intervention-sent-eng').innerText = trans;
@@ -799,22 +681,15 @@ CRITICAL: You must use exactly these tags to format your response, and nothing e
                     const sentBox = document.getElementById('intervention-sentence-box');
                     sentBox.innerHTML = '';
                     
-                    loading.style.display = 'none';
-                    result.style.display = 'block';
+                    loading.style.display = 'none'; result.style.display = 'block';
 
-                    // Animate the sentence characters
+                    // Animate the sentence characters sequentially
                     let currentDelay = 0;
                     Array.from(sentence).forEach((char, idx) => {
-                        const box = document.createElement('div');
-                        box.id = `sent-char-${idx}`;
-                        box.className = 'test-char-box';
-                        sentBox.appendChild(box);
-
+                        const box = document.createElement('div'); box.id = `sent-char-${idx}`; box.className = 'test-char-box'; sentBox.appendChild(box);
                         if (hanziRegex.test(char)) {
-                            setTimeout(() => {
-                                HanziWriter.create(box.id, char, { width: 60, height: 60, padding: 3, showOutline: true, strokeAnimationSpeed: 2 }).animateCharacter();
-                            }, currentDelay);
-                            currentDelay += 800; // stagger animation
+                            setTimeout(() => { HanziWriter.create(box.id, char, { width: 60, height: 60, padding: 3, showOutline: true, strokeAnimationSpeed: 2 }).animateCharacter(); }, currentDelay);
+                            currentDelay += 800;
                         } else {
                             box.innerHTML = `<span style="font-size:40px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`;
                             box.style.border = 'none'; box.style.width = '30px';
@@ -823,16 +698,13 @@ CRITICAL: You must use exactly these tags to format your response, and nothing e
 
                 } catch (e) {
                     console.error("AI Intervention failed", e);
-                    modal.style.display = 'none';
-                    currentTestIndex++;
-                    loadNextQuestion(); // Fail gracefully
+                    modal.style.display = 'none'; currentTestIndex++; loadNextQuestion(); 
                 }
             }
 
             document.getElementById('continue-test-btn').addEventListener('click', () => {
                 document.getElementById('intervention-modal').style.display = 'none';
-                currentTestIndex++;
-                loadNextQuestion();
+                currentTestIndex++; loadNextQuestion();
             });
 
             function handleAnswer(selected, correct, btnNode, currentItem) {
@@ -855,7 +727,7 @@ CRITICAL: You must use exactly these tags to format your response, and nothing e
 
                 if (isCorrect) {
                     score++; document.getElementById('test-score').innerText = score;
-                    mistakeCounts[currentItem.word] = 0; // reset mistakes
+                    mistakeCounts[currentItem.word] = 0; 
                     if (currentState === 'retry_3') {
                         let insertIndex = currentTestIndex + 1 + 10;
                         let newItem = { ...currentItem, testState: 'retry_10' };
@@ -875,9 +747,9 @@ CRITICAL: You must use exactly these tags to format your response, and nothing e
                 document.getElementById('q-total').innerText = testItems.length;
                 speakCharacter(currentItem.word);
 
-                // Check for 3-Strike Rule BEFORE proceeding
+                // 3-STRIKE TRIGGER
                 if (!isCorrect && mistakeCounts[currentItem.word] >= 3 && puterAvailable) {
-                    mistakeCounts[currentItem.word] = 0; // reset after triggering
+                    mistakeCounts[currentItem.word] = 0; 
                     setTimeout(() => triggerAIIntervention(currentItem), 1500);
                 } else {
                     setTimeout(() => { currentTestIndex++; loadNextQuestion(); }, 2000); 
@@ -897,7 +769,45 @@ CRITICAL: You must use exactly these tags to format your response, and nothing e
                 if(gridOutput.innerHTML.trim() !== '') gridOutput.style.display = 'grid';
             }
 
-            endTestBtn.addEventListener('click', finishTest);
+            document.getElementById('end-test-btn').addEventListener('click', finishTest);
+
+            // TTS Setup
+            const synth = window.speechSynthesis;
+            let availableVoices = [];
+            
+            function loadAndPopulateVoices() {
+                availableVoices = synth.getVoices(); 
+                if (availableVoices.length > 0) {
+                    voiceSelectDropdown.innerHTML = '';
+                    const defaultOption = document.createElement('option');
+                    defaultOption.textContent = "Default Chinese"; defaultOption.value = "";
+                    voiceSelectDropdown.appendChild(defaultOption);
+                    
+                    availableVoices.forEach((voice, index) => {
+                        if (voice.lang.startsWith('zh')) {
+                            const opt = document.createElement('option');
+                            opt.textContent = `${voice.name} (${voice.lang})`; opt.value = index.toString();
+                            voiceSelectDropdown.appendChild(opt);
+                        }
+                    });
+                }
+            }
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadAndPopulateVoices; 
+            loadAndPopulateVoices(); 
+
+            function speakCharacter(char) {
+                if (!char) return;
+                if (synth.speaking) synth.cancel();
+                setTimeout(() => {
+                    const utterThis = new SpeechSynthesisUtterance(char);
+                    utterThis.lang = 'zh-CN'; utterThis.rate = 0.85; 
+                    const selectedVal = voiceSelectDropdown.value;
+                    if (selectedVal !== "" && availableVoices[selectedVal]) {
+                        utterThis.voice = availableVoices[selectedVal];
+                    }
+                    synth.speak(utterThis);
+                }, 50); 
+            }
         }); 
     </script>
 </body>
