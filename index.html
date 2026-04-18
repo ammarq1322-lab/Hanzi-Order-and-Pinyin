@@ -795,27 +795,43 @@ CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
 
             document.getElementById('end-test-btn').addEventListener('click', finishTest);
 
-            // TTS Setup
+           // TTS Setup
             const synth = window.speechSynthesis;
             let availableVoices = [];
             
             function loadAndPopulateVoices() {
-                availableVoices = synth.getVoices(); 
-                if (availableVoices.length > 0) {
-                    voiceSelectDropdown.innerHTML = '';
-                    const defaultOption = document.createElement('option');
-                    defaultOption.textContent = "Default Chinese"; defaultOption.value = "";
-                    voiceSelectDropdown.appendChild(defaultOption);
-                    
-                    availableVoices.forEach((voice, index) => {
-                        if (voice.lang.startsWith('zh')) {
-                            const opt = document.createElement('option');
-                            opt.textContent = `${voice.name} (${voice.lang})`; opt.value = index.toString();
-                            voiceSelectDropdown.appendChild(opt);
-                        }
-                    });
+                let currentVoices = synth.getVoices();
+                if (currentVoices.length === 0) return;
+                
+                // Prevent wiping the dropdown if voices are already loaded
+                if (availableVoices.length === currentVoices.length) return;
+                
+                // Save the user's current selection before rebuilding
+                const previousSelection = voiceSelectDropdown.value;
+                
+                availableVoices = currentVoices; 
+                voiceSelectDropdown.innerHTML = '';
+                
+                const defaultOption = document.createElement('option');
+                defaultOption.textContent = "Default Chinese"; 
+                defaultOption.value = "";
+                voiceSelectDropdown.appendChild(defaultOption);
+                
+                availableVoices.forEach((voice, index) => {
+                    if (voice.lang.startsWith('zh')) {
+                        const opt = document.createElement('option');
+                        opt.textContent = `${voice.name} (${voice.lang})`; 
+                        opt.value = index.toString();
+                        voiceSelectDropdown.appendChild(opt);
+                    }
+                });
+                
+                // Restore the user's selection after rebuilding
+                if (previousSelection) {
+                    voiceSelectDropdown.value = previousSelection;
                 }
             }
+            
             if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadAndPopulateVoices; 
             loadAndPopulateVoices(); 
 
@@ -824,10 +840,13 @@ CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
                 if (synth.speaking) synth.cancel();
                 setTimeout(() => {
                     const utterThis = new SpeechSynthesisUtterance(char);
-                    utterThis.lang = 'zh-CN'; utterThis.rate = 0.85; 
+                    utterThis.lang = 'zh-CN'; 
+                    utterThis.rate = 0.85; 
+                    
                     const selectedVal = voiceSelectDropdown.value;
                     if (selectedVal !== "" && availableVoices[selectedVal]) {
                         utterThis.voice = availableVoices[selectedVal];
+                        utterThis.lang = availableVoices[selectedVal].lang; // Ensure language matches voice
                     }
                     synth.speak(utterThis);
                 }, 50); 
