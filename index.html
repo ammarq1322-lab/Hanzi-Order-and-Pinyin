@@ -723,6 +723,14 @@ CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
                 }
             }
 
+            
+              document.getElementById('continue-test-btn').addEventListener('click', () => {
+                document.getElementById('intervention-modal').style.display = 'none';
+                currentTestIndex++; 
+                loadNextQuestion();
+            });
+
+            
             function handleAnswer(selected, correct, btnNode, currentItem) {
                 if (isAnswering) return;
                 isAnswering = true; clearInterval(timerInterval);
