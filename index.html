@@ -644,7 +644,7 @@ pinyin | english meaning`;
                 }, 1000);
             }
 
-            // --- AI Feature 3: Three-Strike Intervention ---
+            // --- AI Feature 3: Three-Strike Intervention -- 
             async function triggerAIIntervention(item) {
                 isAnswering = true; 
                 const modal = document.getElementById('intervention-modal');
@@ -655,10 +655,16 @@ pinyin | english meaning`;
                 modal.style.display = 'flex'; loading.style.display = 'block'; result.style.display = 'none';
                 topWordBox.innerHTML = '';
 
-                // Draw main word in modal
+                // Draw main word in modal (Make Clickable)
                 Array.from(item.word).forEach((char, idx) => {
                     const box = document.createElement('div'); box.id = `interv-char-${idx}`; box.className = 'test-char-box'; topWordBox.appendChild(box);
-                    if (hanziRegex.test(char)) { HanziWriter.create(box.id, char, { width: 80, height: 80, padding: 5, strokeAnimationSpeed: 1, delayBetweenStrokes: 50 }).animateCharacter(); }
+                    if (hanziRegex.test(char)) { 
+                        const writer = HanziWriter.create(box.id, char, { width: 80, height: 80, padding: 5, strokeAnimationSpeed: 1, delayBetweenStrokes: 50 });
+                        writer.animateCharacter();
+                        box.style.cursor = 'pointer';
+                        box.title = "Click to replay animation";
+                        box.addEventListener('click', () => writer.animateCharacter());
+                    }
                     else { box.innerHTML = `<span style="font-size:60px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`; }
                 });
 
@@ -693,13 +699,18 @@ CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
                     
                     loading.style.display = 'none'; result.style.display = 'block';
 
-                    // Animate the sentence characters sequentially
+                    // Animate the sentence characters sequentially (Make Clickable)
                     let currentDelay = 0;
                     Array.from(sentence).forEach((char, idx) => {
                         const box = document.createElement('div'); box.id = `sent-char-${idx}`; box.className = 'test-char-box'; sentBox.appendChild(box);
                         if (hanziRegex.test(char)) {
-                            setTimeout(() => { HanziWriter.create(box.id, char, { width: 60, height: 60, padding: 3, showOutline: true, strokeAnimationSpeed: 2 }).animateCharacter(); }, currentDelay);
+                            const writer = HanziWriter.create(box.id, char, { width: 60, height: 60, padding: 3, showOutline: true, strokeAnimationSpeed: 2 });
+                            setTimeout(() => { writer.animateCharacter(); }, currentDelay);
                             currentDelay += 800;
+                            
+                            box.style.cursor = 'pointer';
+                            box.title = "Click to replay animation";
+                            box.addEventListener('click', () => writer.animateCharacter());
                         } else {
                             box.innerHTML = `<span style="font-size:40px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`;
                             box.style.border = 'none'; box.style.width = '30px';
@@ -711,11 +722,6 @@ CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
                     modal.style.display = 'none'; currentTestIndex++; loadNextQuestion(); 
                 }
             }
-
-            document.getElementById('continue-test-btn').addEventListener('click', () => {
-                document.getElementById('intervention-modal').style.display = 'none';
-                currentTestIndex++; loadNextQuestion();
-            });
 
             function handleAnswer(selected, correct, btnNode, currentItem) {
                 if (isAnswering) return;
