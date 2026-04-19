@@ -192,6 +192,9 @@
             
             <input type="checkbox" id="ai-smart-options-checkbox" checked>
             <label for="ai-smart-options-checkbox">Use AI for smart multiple choices</label>
+            
+            <input type="checkbox" id="ai-context-sentence-checkbox" checked>
+            <label for="ai-context-sentence-checkbox">Extract sentence from my inputted text</label>
         </div>
 
         <div class="btn-group">
@@ -644,7 +647,7 @@ pinyin | english meaning`;
                 }, 1000);
             }
 
-            // --- AI Feature 3: Three-Strike Intervention -- 
+           // --- AI Feature 3: Three-Strike Intervention ---
             async function triggerAIIntervention(item) {
                 isAnswering = true; 
                 const modal = document.getElementById('intervention-modal');
@@ -668,11 +671,30 @@ pinyin | english meaning`;
                     else { box.innerHTML = `<span style="font-size:60px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`; }
                 });
 
+                // Check if user wants to use original text context
+                const useContext = document.getElementById('ai-context-sentence-checkbox').checked;
+                const fullText = document.getElementById('chinese-text-input').value;
+                
+                let contextInstruction = "Create a very short, simple Chinese sentence using this word.";
+                
+                if (useContext) {
+                    // Split text into sentences using Chinese and English punctuation
+                    const sentences = fullText.split(/[。！？\.\!\?\n]/);
+                    const foundSentence = sentences.find(s => s.includes(item.word));
+                    
+                    if (foundSentence && foundSentence.trim().length > 0) {
+                        let cleanSentence = foundSentence.trim() + "。";
+                        contextInstruction = `CRITICAL: You MUST use exactly this sentence from the user's text for the [SENTENCE]: "${cleanSentence}"`;
+                    }
+                }
+
                 const prompt = `The user failed to remember the Chinese word '${item.word}' (${item.pinyin}: ${item.meaning}).
 Provide a short mnemonic, an example sentence, its pinyin, and translation.
+${contextInstruction}
+
 CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
 [MNEMONIC] short memory trick (the trick should relate the character specfic unique part to something easy to remember in life and to  its meaning and its pinyin)
-[SENTENCE] very short chinese sentence
+[SENTENCE] the chinese sentence
 [PINYIN] pinyin of sentence
 [TRANSLATION] english meaning`;
 
