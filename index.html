@@ -184,8 +184,11 @@
         <textarea id="chinese-text-input" placeholder="例如：你好，世界！ 喜欢，欢呼。"></textarea>
         
         <div class="options-row">
-            <input type="checkbox" id="teach-first-checkbox" checked>
-            <label for="teach-first-checkbox">Study flashcards before testing</label>
+            <input type="checkbox" id="teach-first-checkbox">
+            <label for="teach-first-checkbox">Standard Flashcards</label>
+            
+            <input type="checkbox" id="ai-deep-teach-checkbox" checked>
+            <label for="ai-deep-teach-checkbox" style="color: #d9534f; font-weight: bold;">Deep AI Teach & Typing Test</label>
             
             <input type="checkbox" id="ai-missing-checkbox" checked>
             <label for="ai-missing-checkbox">Use AI to define missing words in DB</label>
@@ -215,6 +218,42 @@
         <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
             <button id="teach-next-btn">Next Word</button>
             <button id="teach-skip-btn">Skip Straight to Test</button>
+        </div>
+    </div>
+
+    <!-- DEEP TEACH SECTION (AI + TYPING) -->
+    <div id="deep-teach-section" style="display: none; text-align: center; max-width: 700px; width: 100%; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2 style="color: #d9534f;">AI Deep Teach & Type</h2>
+        <div class="teach-header">Word <span id="deep-curr">1</span>/<span id="deep-total">10</span></div>
+
+        <div id="deep-top-word" class="intervention-top-word"></div>
+        
+        <div id="deep-loading">
+            <div class="spinner" style="margin: 0 auto;"></div>
+            <p>AI is generating a custom lesson...</p>
+        </div>
+
+        <div id="deep-lesson" style="display:none;">
+            <div id="deep-report" class="intervention-report"></div>
+            <div style="font-weight: bold; margin-top: 10px;">Animated Example:</div>
+            <div id="deep-sentence-box" class="intervention-sentence-box"></div>
+            <div class="intervention-sentence-details">
+                <div id="deep-sent-pinyin" style="color: #007bff; font-weight: bold; margin-bottom: 5px;"></div>
+                <div id="deep-sent-eng" style="color: #555;"></div>
+            </div>
+            <button id="deep-ready-btn" style="background-color: #28a745; width: 100%; padding: 15px; font-size: 1.2em; font-weight: bold; margin-top:15px;">I'm Ready to Type It!</button>
+        </div>
+
+        <div id="deep-typing-test" style="display:none; margin-top: 20px;">
+            <h3 style="margin-bottom: 10px; color: #007bff;">Type the Pinyin!</h3>
+            <p style="font-size: 0.9em; color: #555; margin-bottom: 15px;">
+                Use numbers for tones (1=Flat, 2=Rising, 3=Dipping, 4=Falling).<br>
+                <em>Example for 你好: <strong>ni3 hao3</strong></em>
+            </p>
+            <input type="text" id="deep-typing-input" placeholder="e.g. ni3 hao3" autocomplete="off" style="width: 80%; padding: 15px; font-size: 1.5em; text-align: center; border: 2px solid #ccc; border-radius: 8px;">
+            <br>
+            <span id="deep-typing-feedback" style="font-weight:bold; font-size: 1.2em; display:block; margin: 15px 0; min-height: 25px;"></span>
+            <button id="deep-submit-btn" style="background-color: #007bff; width: 80%; padding: 15px; font-size: 1.2em; font-weight: bold;">Check Answer</button>
         </div>
     </div>
 
@@ -512,8 +551,13 @@ Character|pinyin|short meaning in english`;
 
                 if (testItems.length === 0) { alert("No Chinese characters found."); return; }
 
-                if (document.getElementById('teach-first-checkbox').checked) startTeachPhase();
-                else startActualTest();
+                if (document.getElementById('ai-deep-teach-checkbox').checked && puterAvailable) {
+                    startDeepTeachPhase();
+                } else if (document.getElementById('teach-first-checkbox').checked) {
+                    startTeachPhase();
+                } else {
+                    startActualTest();
+                }
             });
 
             // --- Study/Teach Logic ---
@@ -548,7 +592,158 @@ Character|pinyin|short meaning in english`;
             document.getElementById('teach-next-btn').addEventListener('click', () => { currentTeachIndex++; loadNextTeachItem(); });
             document.getElementById('teach-skip-btn').addEventListener('click', () => { startActualTest(); });
 
+// --- AI Feature 4: Deep Teach & Typing Test ---
+            let targetNumericPinyin = "";
 
+            function startDeepTeachPhase() {
+                const uniqueMap = new Map();
+                testItems.forEach(item => { if (!uniqueMap.has(item.word)) uniqueMap.set(item.word, item); });
+                teachItems = Array.from(uniqueMap.values()); 
+                currentTeachIndex = 0;
+                
+                inputSection.style.display = 'none'; voiceWrapper.style.display = 'none'; gridOutput.style.display = 'none';
+                document.getElementById('teach-section').style.display = 'none';
+                testSection.style.display = 'none'; 
+                
+                document.getElementById('deep-teach-section').style.display = 'block';
+                document.getElementById('deep-total').innerText = teachItems.length;
+                loadNextDeepTeachItem();
+            }
+
+            async function loadNextDeepTeachItem() {
+                if (currentTeachIndex >= teachItems.length) { startActualTest(); return; }
+                
+                document.getElementById('deep-curr').innerText = currentTeachIndex + 1;
+                const item = teachItems[currentTeachIndex];
+                
+                document.getElementById('deep-loading').style.display = 'block';
+                document.getElementById('deep-lesson').style.display = 'none';
+                document.getElementById('deep-typing-test').style.display = 'none';
+                
+                const topWordBox = document.getElementById('deep-top-word');
+                topWordBox.innerHTML = '';
+
+                // Draw word
+                Array.from(item.word).forEach((char, idx) => {
+                    const box = document.createElement('div'); box.id = `deep-char-${idx}`; box.className = 'test-char-box'; topWordBox.appendChild(box);
+                    if (hanziRegex.test(char)) { 
+                        const writer = HanziWriter.create(box.id, char, { width: 80, height: 80, padding: 5, strokeAnimationSpeed: 1, delayBetweenStrokes: 50 });
+                        writer.animateCharacter();
+                        box.style.cursor = 'pointer'; box.title = "Click to replay"; box.addEventListener('click', () => writer.animateCharacter());
+                    } else { box.innerHTML = `<span style="font-size:60px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`; }
+                });
+
+                // Context Sentence Logic
+                const useContext = document.getElementById('ai-context-sentence-checkbox').checked;
+                const fullText = document.getElementById('chinese-text-input').value;
+                let contextInstruction = "Create a very short, simple Chinese sentence using this word.";
+                if (useContext) {
+                    const sentences = fullText.split(/[。！？\.\!\?\n]/);
+                    const foundSentence = sentences.find(s => s.includes(item.word));
+                    if (foundSentence && foundSentence.trim().length > 0) {
+                        contextInstruction = `CRITICAL: You MUST use exactly this sentence from the user's text for the [SENTENCE]: "${foundSentence.trim()}。"`;
+                    }
+                }
+
+                const prompt = `The user is learning the Chinese word '${item.word}' (${item.pinyin}: ${item.meaning}).
+Provide a mnemonic, a sentence, translation, AND the numeric pinyin so I can test them.
+${contextInstruction}
+
+CRITICAL: You MUST reply using ONLY these specific tags and nothing else:
+[MNEMONIC] short memory trick (the trick should relate the character specfic unique part to something easy to remember in life and to  its meaning and its pinyin)
+[SENTENCE] the chinese sentence
+[PINYIN] pinyin of sentence
+[TRANSLATION] english meaning
+[NUMERIC] the word's numeric pinyin (e.g. ni3 hao3)`;
+
+                try {
+                    const text = await askPuterAI(prompt);
+                    const extractTag = (txt, tag) => {
+                        const regex = new RegExp(`\\[${tag}\\]\\s*([\\s\\S]*?)(?=\\[|$)`, 'i');
+                        const match = txt.match(regex);
+                        return match ? match[1].trim() : "";
+                    };
+
+                    const mnemonic = extractTag(text, "MNEMONIC") || "Focus on the shapes!";
+                    const sentence = extractTag(text, "SENTENCE") || `这是${item.word}。`;
+                    const pinyin = extractTag(text, "PINYIN") || "Zhè shì...";
+                    const trans = extractTag(text, "TRANSLATION") || `This is ${item.word}.`;
+                    
+                    // Save target numeric pinyin for the typing test
+                    targetNumericPinyin = extractTag(text, "NUMERIC").toLowerCase();
+                    // Fallback if AI fails to provide numeric pinyin
+                    if (!targetNumericPinyin) targetNumericPinyin = item.pinyin; 
+
+                    document.getElementById('deep-report').innerHTML = `<strong>Mnemonic:</strong><br>${mnemonic.replace(/\n/g, '<br>')}`;
+                    document.getElementById('deep-sent-pinyin').innerText = pinyin;
+                    document.getElementById('deep-sent-eng').innerText = trans;
+
+                    const sentBox = document.getElementById('deep-sentence-box');
+                    sentBox.innerHTML = '';
+                    document.getElementById('deep-loading').style.display = 'none';
+                    document.getElementById('deep-lesson').style.display = 'block';
+
+                    let currentDelay = 0;
+                    Array.from(sentence).forEach((char, idx) => {
+                        const box = document.createElement('div'); box.id = `deep-sent-char-${idx}`; box.className = 'test-char-box'; sentBox.appendChild(box);
+                        if (hanziRegex.test(char)) {
+                            const writer = HanziWriter.create(box.id, char, { width: 60, height: 60, padding: 3, showOutline: true, strokeAnimationSpeed: 2 });
+                            setTimeout(() => { writer.animateCharacter(); }, currentDelay);
+                            currentDelay += 800;
+                            box.style.cursor = 'pointer'; box.addEventListener('click', () => writer.animateCharacter());
+                        } else {
+                            box.innerHTML = `<span style="font-size:40px; display:flex; justify-content:center; align-items:center; height:100%;">${char}</span>`;
+                            box.style.border = 'none'; box.style.width = '30px';
+                        }
+                    });
+                    
+                    speakCharacter(item.word);
+
+                } catch (e) {
+                    console.error("AI Deep Teach failed", e);
+                    currentTeachIndex++; loadNextDeepTeachItem(); // Skip gracefully on error
+                }
+            }
+
+            document.getElementById('deep-ready-btn').addEventListener('click', () => {
+                document.getElementById('deep-lesson').style.display = 'none';
+                document.getElementById('deep-typing-test').style.display = 'block';
+                const inputField = document.getElementById('deep-typing-input');
+                inputField.value = '';
+                document.getElementById('deep-typing-feedback').innerText = '';
+                inputField.focus();
+            });
+
+            // Handle pressing Enter key in the input box
+            document.getElementById('deep-typing-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') document.getElementById('deep-submit-btn').click();
+            });
+
+            document.getElementById('deep-submit-btn').addEventListener('click', () => {
+                const inputField = document.getElementById('deep-typing-input');
+                const feedback = document.getElementById('deep-typing-feedback');
+                
+                // Remove spaces and lowercase both to make verification super forgiving
+                const userInput = inputField.value.trim().toLowerCase().replace(/\s+/g, '');
+                const expected = targetNumericPinyin.toLowerCase().replace(/\s+/g, '');
+                
+                if (userInput === expected || userInput === teachItems[currentTeachIndex].pinyin.toLowerCase().replace(/\s+/g, '')) {
+                    feedback.style.color = '#28a745';
+                    feedback.innerText = 'Correct! ✅';
+                    setTimeout(() => {
+                        currentTeachIndex++;
+                        loadNextDeepTeachItem();
+                    }, 1200);
+                } else {
+                    feedback.style.color = '#dc3545';
+                    // After a mistake, reveal the hint
+                    feedback.innerText = `Incorrect ❌ Try again! (Hint: ${targetNumericPinyin})`;
+                    inputField.value = '';
+                    inputField.focus();
+                }
+            });
+
+            
             // --- Actual Memory Test Logic ---
             function startActualTest() {
                 teachSection.style.display = 'none'; inputSection.style.display = 'none';
